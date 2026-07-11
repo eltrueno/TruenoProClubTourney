@@ -1,0 +1,19 @@
+{
+  "name": "@trueno-proclub-services/auth",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "better-auth": "latest",
+    "dotenv": "^16.4.5",
+    "mongodb": "^6.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "typescript": "^5.4.5"
+  }
+}

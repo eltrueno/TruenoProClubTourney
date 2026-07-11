@@ -1,0 +1,9 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Bracket from '../components/Bracket.vue';
+---
+
+<Layout title="Bracket del torneo">
+  <h1 class="text-2xl font-bold mb-4">Cuadro del torneo</h1>
+  <Bracket client:load />
+</Layout>

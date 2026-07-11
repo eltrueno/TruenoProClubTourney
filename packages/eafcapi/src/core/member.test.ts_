@@ -1,0 +1,10 @@
+import { getMembersClubStats } from './member'
+describe('member test', () => {
+	test('getMembersClubStats a valid string query', async () => {
+		const result = await getMembersClubStats(13607, 'rE4p14Gj8KOtkGq63eL8mA!!:BrUy43tm4sv8Qz5jmZvGkg!!')
+		expect(result).toBeTruthy()
+		// expect(result?.length).toBeGreaterThanOrEqual(1)
+		// expect(result).toBeInstanceOf(Array)
+		expect(result).toStrictEqual({})
+	})
+})

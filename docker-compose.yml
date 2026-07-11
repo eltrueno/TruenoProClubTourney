@@ -1,0 +1,36 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - apps/backend/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/trueno_pro_club_tourney
+    ports:
+      - "4000:4000"
+
+  # Opcional: solo para local/dev. En producción el frontend va a GitHub Pages.
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - apps/frontend/.env
+    ports:
+      - "4321:4321"
+
+volumes:
+  mongo_data:
