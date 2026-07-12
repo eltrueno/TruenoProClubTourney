@@ -26,7 +26,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -34,7 +34,12 @@ jobs:
           cache: pnpm
 
       - name: Instalar dependencias
-        run: pnpm install --frozen-lockfile
+        # Solo frontend + lo que depende (shared). NO se instala eafcapi/backend
+        # aqui a proposito: eafcapi trae puppeteer, y su postinstall intenta
+        # descargar Chrome desde Google, lo cual falla con 403 en varios
+        # runners de GitHub Actions y tira todo el deploy sin necesidad,
+        # ya que el frontend no lo usa para nada.
+        run: pnpm install --frozen-lockfile --filter @trueno-pro-club-tourney/frontend...
 
       - name: Build del frontend
         run: pnpm --filter @trueno-pro-club-tourney/frontend build

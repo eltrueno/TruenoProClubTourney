@@ -7,6 +7,7 @@ import type {
 } from '@trueno-pro-club-tourney/shared';
 import { SeriesModel, type ISeriesDoc } from '../models/Series.model.js';
 import { computeGroupStandings } from './standings.service.js';
+import { createSeries } from './series.service.js';
 
 export function getStageConfig(config: ITournamentConfig, stageId: string): IStageConfig {
   const stage = config.stages.find((s) => s.id === stageId);
@@ -156,4 +157,71 @@ function getWinnerTeamId(series: ISeriesDoc): string | null {
 
   if (winsA === winsB) return null;
   return winsA > winsB ? (series.teamA?.toString() ?? null) : (series.teamB?.toString() ?? null);
+}
+
+/**
+ * Genera automaticamente todas las Series de una fase de grupos: todos
+ * contra todos dentro de cada grupo. Segun `matchFormat`:
+ *  - 'single': 1 serie por cada pareja de equipos del grupo
+ *  - 'homeAndAway': 2 series por pareja, con teamA/teamB invertidos en la vuelta
+ *
+ * Es seguro llamarla mas de una vez por error: si la fase ya tiene series,
+ * no crea duplicados.
+ */
+export async function seedGroupsStage(stage: IGroupsStageConfig): Promise<void> {
+  const existing = await SeriesModel.countDocuments({ stageId: stage.id });
+  if (existing > 0) {
+    throw new Error(
+      `La fase "${stage.id}" ya tiene ${existing} series creadas. Borralas primero si quieres regenerar el fixture.`
+    );
+  }
+
+  for (const group of stage.groups) {
+    const teamIds = group.teamIds;
+
+    for (let i = 0; i < teamIds.length; i++) {
+      for (let j = i + 1; j < teamIds.length; j++) {
+        await createSeries({
+          teamA: teamIds[i],
+          teamB: teamIds[j],
+          stageId: stage.id,
+          stageType: 'groups',
+          round: stage.name,
+          group: group.name,
+          bestOf: stage.bestOf,
+        });
+
+        if (stage.matchFormat === 'homeAndAway') {
+          await createSeries({
+            teamA: teamIds[j],
+            teamB: teamIds[i],
+            stageId: stage.id,
+            stageType: 'groups',
+            round: stage.name,
+            group: group.name,
+            bestOf: stage.bestOf,
+          });
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Se llama tras cada Series que termina. Si pertenece a una fase de grupos y
+ * TODAS las series de esa fase ya estan completadas, resuelve automaticamente
+ * la fase siguiente (rellena teamA/teamB de knockout) sin esperar a que un
+ * admin lo dispare a mano.
+ */
+export async function checkAndAutoAdvanceStage(config: ITournamentConfig, stageId: string): Promise<void> {
+  const stage = getStageConfig(config, stageId);
+  if (stage.type !== 'groups') return; // knockout ya se propaga solo via propagateWinner
+
+  const total = await SeriesModel.countDocuments({ stageId });
+  if (total === 0) return;
+
+  const completed = await SeriesModel.countDocuments({ stageId, status: 'completed' });
+  if (completed < total) return;
+
+  await resolveGroupsStage(config, stage);
 }

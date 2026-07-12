@@ -30,6 +30,8 @@ export const tournamentConfig: ITournamentConfig = {
       ],
       tiebreak: ['points', 'goalDiff', 'goalsFor'],
       bestOf: 1,
+      // 'single' = un partido contra cada rival. 'homeAndAway' = dos (ida y vuelta)
+      matchFormat: 'single',
       qualification: {
         perGroupAutoQualify: 2, // 1o y 2o de cada grupo
         bestOthers: 0, // con solo 2 grupos no hay terceros; en el torneo real: 8

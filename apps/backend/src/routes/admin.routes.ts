@@ -10,3 +10,4 @@ adminRouter.get('/disputes', adminController.listDisputes);
 adminRouter.post('/series/:id/matches/:position/resolve', adminController.resolveDispute);
 adminRouter.post('/series', adminController.createSeries);
 adminRouter.post('/stages/:stageId/resolve', adminController.resolveStage);
+adminRouter.post('/stages/:stageId/seed', adminController.seedGroupsStage);

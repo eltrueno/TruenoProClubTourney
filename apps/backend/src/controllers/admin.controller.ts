@@ -23,9 +23,29 @@ export async function resolveDispute(req: Request, res: Response) {
 
   if (series.status === 'completed') {
     await bracketService.propagateWinner(series.id);
+
+    const config = await loadTournamentConfig();
+    await bracketService.checkAndAutoAdvanceStage(config, series.stageId);
   }
 
   res.json(series);
+}
+
+/** Genera el fixture completo (todos contra todos) de una fase de grupos, segun matchFormat */
+export async function seedGroupsStage(req: Request, res: Response) {
+  const config = await loadTournamentConfig();
+  const stage = bracketService.getStageConfig(config, req.params.stageId);
+
+  if (stage.type !== 'groups') {
+    return res.status(400).json({ error: `La fase "${stage.id}" no es de tipo groups` });
+  }
+
+  try {
+    await bracketService.seedGroupsStage(stage);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Error generando el fixture' });
+  }
 }
 
 export async function createSeries(req: Request, res: Response) {

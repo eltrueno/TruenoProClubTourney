@@ -56,7 +56,10 @@ export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandid
   }
 
   const matches = await eaQueue.add(() =>
-    withRetry(() => club.getClubMatchHistory(PLATFORM, Number(eaClubId), 'leagueMatch'))
+    // El tipo TGametype de eafcapi solo declara 'leagueMatch' | 'playoffMatch',
+    // pero la API de EA si admite 'friendlyMatch' de verdad (igual que en el
+    // resto de servicios de TruenoProClubServices, que tambien lo castean).
+    withRetry(() => club.getClubMatchHistory(PLATFORM, Number(eaClubId), 'friendlyMatch' as 'leagueMatch'))
   );
 
   const candidates = (matches ?? []).map((m) => toCandidateMatch(m, eaClubId));

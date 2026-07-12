@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import * as seriesService from '../services/series.service.js';
 import * as bracketService from '../services/bracket.service.js';
 import * as eaService from '../services/ea.service.js';
+import { loadTournamentConfig } from '../config/tournament.loader.js';
 
 export async function list(_req: Request, res: Response) {
   const series = await seriesService.listSeries();
@@ -63,7 +64,7 @@ export async function createManual(req: Request, res: Response) {
 export async function confirm(req: Request, res: Response) {
   try {
     const series = await seriesService.confirmMatch(req.params.id, Number(req.params.position), req.user!.id);
-    await maybePropagate(series.id, series.status);
+    await maybePropagate(series.id, series.stageId, series.status);
     res.json(series);
   } catch (err) {
     handleServiceError(err, res);
@@ -90,10 +91,12 @@ export async function edit(req: Request, res: Response) {
   }
 }
 
-async function maybePropagate(seriesId: string, status: string) {
-  if (status === 'completed') {
-    await bracketService.propagateWinner(seriesId);
-  }
+async function maybePropagate(seriesId: string, stageId: string, status: string) {
+  if (status !== 'completed') return;
+  await bracketService.propagateWinner(seriesId);
+
+  const config = await loadTournamentConfig();
+  await bracketService.checkAndAutoAdvanceStage(config, stageId);
 }
 
 function handleServiceError(err: unknown, res: Response) {

@@ -58,6 +58,12 @@ export interface IGroupsStageConfig {
   groups: IGroupConfig[];
   tiebreak: TiebreakCriterion[];
   bestOf: 1 | 3;
+  /**
+   * 'single': cada equipo juega 1 vez contra cada rival de su grupo.
+   * 'homeAndAway': cada equipo juega 2 veces contra cada rival (ida y vuelta,
+   * los lados de teamA/teamB se invierten en la vuelta).
+   */
+  matchFormat: 'single' | 'homeAndAway';
   qualification: {
     perGroupAutoQualify: number; // ej. 2 (1o y 2o)
     bestOthers: number; // ej. 8 (mejores terceros), o 0 si no aplica
