@@ -21,6 +21,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
       - uses: actions/checkout@v4
 
@@ -40,6 +42,14 @@ jobs:
         # runners de GitHub Actions y tira todo el deploy sin necesidad,
         # ya que el frontend no lo usa para nada.
         run: pnpm install --frozen-lockfile --filter @trueno-pro-club-tourney/frontend...
+
+      - name: Comprobar variables
+        run: |
+          echo "API='$PUBLIC_API_URL'"
+          echo "AUTH='$PUBLIC_ROOT_AUTH_URL'"
+        env:
+          PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+          PUBLIC_ROOT_AUTH_URL: ${{ vars.PUBLIC_ROOT_AUTH_URL }}
 
       - name: Build del frontend
         run: pnpm --filter @trueno-pro-club-tourney/frontend build
