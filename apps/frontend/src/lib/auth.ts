@@ -1,5 +1,9 @@
 const ROOT_AUTH_URL = import.meta.env.PUBLIC_ROOT_AUTH_URL ?? 'https://midominio.com/api/auth';
 
+/**DEBUG */
+console.log("PUBLIC_ROOT_AUTH_URL =", import.meta.env.PUBLIC_ROOT_AUTH_URL);
+console.log("ROOT_AUTH_URL =", ROOT_AUTH_URL);
+
 export interface Session {
   user: { id: string; name?: string; image?: string };
 }
