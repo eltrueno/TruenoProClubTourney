@@ -1,38 +1,88 @@
 import type { ISeries, ITeam } from '@trueno-pro-club-tourney/shared';
+import type { IEaCandidateMatch } from '@trueno-pro-club-tourney/shared';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:4000';
 
+export class ApiError extends Error {
+  constructor(public code: string, message: string) {
+    super(message);
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
-    credentials: 'include', // manda la cookie de sesion compartida con la raiz
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...init,
   });
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Error ${res.status} llamando a ${path}`);
+    // Soporta ambos formatos: { status: { code, message } } y { error: string }
+    const code = body?.status?.code ?? 'UNKNOWN_ERROR';
+    const message = body?.status?.message ?? body?.error ?? `Error ${res.status}`;
+    throw new ApiError(code, message);
   }
 
   return res.json() as Promise<T>;
 }
 
 export const api = {
-  getSeries: () => apiFetch<ISeries[]>('/api/series'),
-  getSeriesById: (id: string) => apiFetch<ISeries>(`/api/series/${id}`),
-  getMySeries: () => apiFetch<ISeries[]>('/api/series/mine'),
-  getTeams: () => apiFetch<ITeam[]>('/api/teams'),
+  // Públicos
+  getSeries: () => apiFetch<ISeries[]>('/series'),
+  getSeriesById: (id: string) => apiFetch<ISeries>(`/series/${id}`),
+  getTeams: () => apiFetch<ITeam[]>('/teams'),
 
+  // Capitán
+  getMySeries: () => apiFetch<ISeries[]>('/series/mine'),
+  getMyTeam: () => apiFetch<ITeam>('/teams/mine'),
+  getEaCandidates: (eaClubId: string) =>
+    apiFetch<IEaCandidateMatch[]>(`/series/ea/candidates?eaClubId=${eaClubId}`),
+  selectCandidate: (seriesId: string, position: number, candidate: IEaCandidateMatch) =>
+    apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/select-candidate`, {
+      method: 'POST',
+      body: JSON.stringify(candidate),
+    }),
   confirmMatch: (seriesId: string, position: number) =>
-    apiFetch<ISeries>(`/api/series/${seriesId}/matches/${position}/confirm`, { method: 'POST' }),
+    apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/confirm`, { method: 'POST' }),
+  editMatch: (seriesId: string, position: number, body: { scoreA: number; scoreB: number; changeDescription: string }) =>
+    apiFetch<ISeries>(`/series/${seriesId}/matches/${position}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  setEaClubId: (teamId: string, eaClubId: string) =>
+    apiFetch<ITeam>(`/teams/${teamId}/ea-club`, {
+      method: 'PATCH',
+      body: JSON.stringify({ eaClubId }),
+    }),
+
+  // Admin: equipos
+  createTeam: (body: { name: string; countryCode?: string; logoUrl?: string; group?: string }) =>
+    apiFetch<ITeam>('/teams', { method: 'POST', body: JSON.stringify(body) }),
+  updateTeam: (id: string, body: Partial<{ name: string; countryCode: string; logoUrl: string; group: string }>) =>
+    apiFetch<ITeam>(`/teams/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  assignCaptain: (teamId: string, userId: string) =>
+    apiFetch(`/teams/${teamId}/captain`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  removeCaptain: (teamId: string) =>
+    apiFetch(`/teams/${teamId}/captain`, { method: 'DELETE' }),
+
+  // Admin: fases y disputas
+  listDisputes: () => apiFetch<any[]>('/admin/disputes'),
+  resolveDispute: (seriesId: string, position: number, body: { scoreA: number; scoreB: number }) =>
+    apiFetch<ISeries>(`/admin/series/${seriesId}/matches/${position}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  seedGroupsStage: (stageId: string) =>
+    apiFetch<{ status: { code: string; message: string } }>(`/admin/stages/${stageId}/seed`, { method: 'POST' }),
+  resolveStage: (stageId: string) =>
+    apiFetch<{ status: { code: string; message: string } }>(`/admin/stages/${stageId}/resolve`, { method: 'POST' }),
 };
 
-/** URL de la bandera de un pais a partir de su codigo ISO alpha-2 */
 export function flagUrl(countryCode: string): string {
   return `https://flagcdn.com/${countryCode.toLowerCase()}.svg`;
 }
 
-/** Escudo/bandera del equipo: usa logoUrl si es un club, o la bandera si es una selección */
 export function teamBadge(team: Pick<ITeam, 'logoUrl' | 'countryCode'> | undefined): string | null {
   if (!team) return null;
   if (team.logoUrl) return team.logoUrl;

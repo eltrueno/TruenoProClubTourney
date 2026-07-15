@@ -17,8 +17,28 @@ function toPlayerStatDoc(stat: IMatchPlayerStat) {
     eaPlayerId: stat.eaPlayerId,
     playerName: stat.playerName,
     team: stat.team,
-    goals: stat.goals,
+    position: stat.position,
     origin: stat.origin,
+    rating: stat.rating,
+    secondsPlayed: stat.secondsPlayed,
+    manOfTheMatch: stat.manOfTheMatch,
+    goals: stat.goals,
+    assists: stat.assists,
+    shots: stat.shots,
+    goalsConceded: stat.goalsConceded,
+    redCards: stat.redCards,
+    cleanSheet: stat.cleanSheet,
+    passesMade: stat.passesMade,
+    passesSuccess: stat.passesSuccess,
+    tacklesMade: stat.tacklesMade,
+    tacklesSuccess: stat.tacklesSuccess,
+    saves: stat.saves,
+    goodDirectionSaves: stat.goodDirectionSaves,
+    crossSaves: stat.crossSaves,
+    ballDiveSaves: stat.ballDiveSaves,
+    parrySaves: stat.parrySaves,
+    punchSaves: stat.punchSaves,
+    reflexSaves: stat.reflexSaves,
     editedBy: stat.editedBy,
     editedAt: stat.editedAt ? new Date(stat.editedAt) : undefined,
   };
@@ -82,7 +102,7 @@ export async function createSeries(input: {
 }): Promise<ISeries> {
   const matches: IMatchDoc[] = Array.from({ length: input.bestOf }, (_, i) => ({
     position: i + 1,
-    status: 'sin_seleccionar',
+    status: 'unselected',
     isManual: false,
     effective: { scoreA: null, scoreB: null, playerStats: [] },
     edits: [],
@@ -152,7 +172,7 @@ export async function selectCandidateForMatch(
   }
 
   const match = findMatch(series, position);
-  if (match.status !== 'sin_seleccionar') {
+  if (match.status !== 'unselected') {
     throw new ServiceError('ALREADY_SET', 'Este slot ya tiene una partida asignada');
   }
 
@@ -174,7 +194,7 @@ export async function selectCandidateForMatch(
     scoreB: normalized.scoreB,
     playerStats: normalized.playerStats.map(toPlayerStatDoc),
   };
-  match.status = 'pendiente_confirmacion';
+  match.status = 'pending_confirmation';
   series.usedEaMatchIds.push(candidate.eaMatchId);
 
   await series.save();
@@ -194,7 +214,7 @@ export async function createManualMatch(
   await resolveSide(series, requesterUserId);
 
   const match = findMatch(series, position);
-  if (match.status !== 'sin_seleccionar') {
+  if (match.status !== 'unselected') {
     throw new ServiceError('ALREADY_SET', 'Este slot ya tiene una partida asignada');
   }
 
@@ -206,7 +226,7 @@ export async function createManualMatch(
     scoreB: input.scoreB,
     playerStats: input.playerStats.map((p) => toPlayerStatDoc({ ...p, origin: 'manual' as const })),
   };
-  match.status = 'pendiente_confirmacion';
+  match.status = 'pending_confirmation';
 
   await series.save();
   return toISeries(series);
@@ -268,7 +288,7 @@ export async function editMatch(
 
   // Al editar, se reabre la confirmacion: ambos deben volver a confirmar el nuevo resultado
   match.confirmations = {};
-  match.status = 'pendiente_confirmacion';
+  match.status = 'pending_confirmation';
 
   recomputeSeriesStatus(series);
   await series.save();
@@ -300,7 +320,7 @@ export async function resolveDispute(
     byTeamA: { userId: adminUserId, at: new Date(), scoreA: input.scoreA, scoreB: input.scoreB },
     byTeamB: { userId: adminUserId, at: new Date(), scoreA: input.scoreA, scoreB: input.scoreB },
   };
-  match.status = 'confirmado';
+  match.status = 'confirmed';
 
   recomputeSeriesStatus(series);
   await series.save();
@@ -314,7 +334,7 @@ export async function listDisputes() {
 
   return seriesWithDisputes.flatMap((series) =>
     series.matches
-      .filter((m) => m.status === 'disputado')
+      .filter((m) => m.status === 'disputed')
       .map((m) => ({
         seriesId: series._id.toString(),
         teamA: series.teamA,
@@ -332,12 +352,12 @@ function recomputeMatchStatus(match: IMatchDoc): void {
   if (!byTeamA || !byTeamB) return; // sigue pendiente hasta que confirmen los dos
 
   const coincide = byTeamA.scoreA === byTeamB.scoreA && byTeamA.scoreB === byTeamB.scoreB;
-  match.status = coincide ? 'confirmado' : 'disputado';
+  match.status = coincide ? 'confirmed' : 'disputed';
 }
 
 /** Recalcula el estado global de la serie segun cuantos matches estan confirmados */
 function recomputeSeriesStatus(series: ISeriesDoc): void {
-  const confirmed = series.matches.filter((m) => m.status === 'confirmado');
+  const confirmed = series.matches.filter((m) => m.status === 'confirmed');
 
   if (confirmed.length === 0) {
     series.status = 'pending';

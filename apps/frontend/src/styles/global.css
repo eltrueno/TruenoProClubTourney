@@ -1,4 +1,114 @@
 @import "tailwindcss";
-@plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "mundial";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  /* Colores principales */
+  --color-primary: #C5923B;
+  --color-primary-content: #0A0A0A;
+
+  --color-secondary: #8E5E20;
+  --color-secondary-content: #FFFFFF;
+
+  --color-accent: #E5AF4F;
+  --color-accent-content: #0A0A0A;
+
+  /* Base */
+  --color-neutral: #151515;
+  --color-neutral-content: #EDEDED;
+
+  --color-base-100: #090909;
+  --color-base-200: #111111;
+  --color-base-300: #1A1A1A;
+  --color-base-content: #F5F5F5;
+
+  /* Estados */
+  --color-info: #3ABFF8;
+  --color-success: #36D399;
+  --color-warning: #FBBD23;
+  --color-error: #F87272;
+
+  /* Configuración */
+  --radius-selector: .5rem;
+  --radius-field: .5rem;
+  --radius-box: .75rem;
+
+  --size-selector: .25rem;
+  --size-field: .25rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+
+
+@utility gold-text {
+  background: linear-gradient(180deg,
+      #E5AF4F 0%,
+      #C5923B 45%,
+      #8E5E20 100%);
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility gold-border {
+  border: 1px solid #C5923B;
+
+  box-shadow:
+    inset 0 0 0 1px rgb(229 175 79 / 15%),
+    0 0 12px rgb(197 146 59 / 18%);
+}
+
+
+.gold {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: none;
+}
+
+.gold:hover {
+  background: var(--color-accent);
+}
+
+.gold:active {
+  background: var(--color-secondary);
+}
+
+.btn-gold-outline {
+  @apply btn border transition-all duration-200;
+
+  color: #E5AF4F;
+  border-color: #C5923B;
+  background: transparent;
+}
+
+.btn-gold-outline:hover {
+  color: black;
+  background: #C5923B;
+  border-color: #E5AF4F;
+}
+
+.btn-gold-outline:active {
+  background: #8E5E20;
+  border-color: #8E5E20;
+}
+
+
+
+.card-gold {
+  @apply rounded-box;
+
+  background: rgb(17 17 17);
+  border: 1px solid rgb(197 146 59 / 25%);
+
+  box-shadow:
+    inset 0 1px 0 rgb(229 175 79 / 10%),
+    0 0 15px rgb(197 146 59 / 8%);
 }

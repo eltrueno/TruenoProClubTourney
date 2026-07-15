@@ -2,7 +2,9 @@ packages:
   - "packages/*"
   - "apps/*"
 
-# pnpm 11 elimino onlyBuiltDependencies; ahora se aprueban builds nativos asi
+inject-workspace-packages: true
+
 allowBuilds:
   esbuild: true
   puppeteer: true
+  

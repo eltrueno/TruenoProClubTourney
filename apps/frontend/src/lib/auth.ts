@@ -1,17 +1,13 @@
-const ROOT_AUTH_URL = import.meta.env.PUBLIC_ROOT_AUTH_URL ?? 'https://midominio.com/api/auth';
+import { createAuthClient } from 'better-auth/vue';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
+import type { AuthType } from '@trueno-proclub-services/auth';
 
-/**DEBUG */
-console.log("PUBLIC_ROOT_AUTH_URL =", import.meta.env.PUBLIC_ROOT_AUTH_URL);
-console.log("ROOT_AUTH_URL =", ROOT_AUTH_URL);
+const BASE_URL = import.meta.env.PUBLIC_AUTH_URL ?? 'https://auth.casemurocity.org';
 
-export interface Session {
-  user: { id: string; name?: string; image?: string };
-}
+export const authClient = createAuthClient({
+  baseURL: BASE_URL,
+  plugins: [inferAdditionalFields<AuthType>()],
+});
 
-/** Llama directo a la raíz (no al backend del torneo) para saber quién está logueado */
-export async function getSession(): Promise<Session | null> {
-  const res = await fetch(`${ROOT_AUTH_URL}/get-session`, { credentials: 'include' });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.user ? data : null;
-}
+// Re-exportamos User para que los componentes no importen de auth directamente
+export type { User } from '@trueno-proclub-services/auth';

@@ -5,6 +5,7 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 export const teamRouter = Router();
 
 teamRouter.get('/', teamController.list);
+teamRouter.get('/mine', requireAuth, teamController.getMine);
 teamRouter.get('/:id', teamController.getOne);
 
 teamRouter.post('/', requireAuth, requireAdmin, teamController.create);

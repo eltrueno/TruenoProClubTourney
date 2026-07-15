@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdminPanel from '../components/admin/AdminPanel.vue';
+---
+<Layout title="Administración">
+  <h1 class="text-2xl font-black mb-6">Administración</h1>
+  <AdminPanel client:load />
+</Layout>

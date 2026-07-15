@@ -3,6 +3,10 @@ import * as seriesService from '../services/series.service.js';
 import * as bracketService from '../services/bracket.service.js';
 import { loadTournamentConfig } from '../config/tournament.loader.js';
 
+function apiError(res: Response, httpStatus: number, code: string, message: string) {
+  return res.status(httpStatus).json({ status: { code, message } });
+}
+
 export async function listDisputes(_req: Request, res: Response) {
   const disputes = await seriesService.listDisputes();
   res.json(disputes);
@@ -11,71 +15,53 @@ export async function listDisputes(_req: Request, res: Response) {
 export async function resolveDispute(req: Request, res: Response) {
   const { scoreA, scoreB, playerStats } = req.body ?? {};
   if (scoreA == null || scoreB == null) {
-    return res.status(400).json({ error: 'Faltan scoreA o scoreB' });
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan scoreA o scoreB');
   }
-
   const series = await seriesService.resolveDispute(
     req.params.id,
     Number(req.params.position),
     req.user!.id,
     { scoreA, scoreB, playerStats: playerStats ?? [] }
   );
-
   if (series.status === 'completed') {
     await bracketService.propagateWinner(series.id);
-
     const config = await loadTournamentConfig();
     await bracketService.checkAndAutoAdvanceStage(config, series.stageId);
   }
-
   res.json(series);
 }
 
-/** Genera el fixture completo (todos contra todos) de una fase de grupos, segun matchFormat */
 export async function seedGroupsStage(req: Request, res: Response) {
   const config = await loadTournamentConfig();
   const stage = bracketService.getStageConfig(config, req.params.stageId);
-
   if (stage.type !== 'groups') {
-    return res.status(400).json({ error: `La fase "${stage.id}" no es de tipo groups` });
+    return apiError(res, 400, 'BAD_REQUEST', `La fase "${stage.id}" no es de tipo groups`);
   }
-
   try {
     await bracketService.seedGroupsStage(stage);
-    res.json({ ok: true });
+    res.json({ status: { code: 'OK', message: `Fixture generado para la fase "${stage.id}"` } });
   } catch (err) {
-    res.status(400).json({ error: err instanceof Error ? err.message : 'Error generando el fixture' });
+    return apiError(res, 400, 'SEED_FAILED', err instanceof Error ? err.message : 'Error generando el fixture');
   }
 }
 
 export async function createSeries(req: Request, res: Response) {
   const { teamA, teamB, sourceA, sourceB, bracketSlot, stageId, stageType, round, group, bestOf } = req.body ?? {};
   if (!stageId || !stageType || !round || !bestOf) {
-    return res.status(400).json({ error: 'Faltan stageId, stageType, round o bestOf' });
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan stageId, stageType, round o bestOf');
   }
-
   const series = await seriesService.createSeries({
-    teamA,
-    teamB,
-    sourceA,
-    sourceB,
-    bracketSlot,
-    stageId,
-    stageType,
-    round,
-    group,
-    bestOf,
+    teamA, teamB, sourceA, sourceB, bracketSlot, stageId, stageType, round, group, bestOf,
   });
   res.status(201).json(series);
 }
 
-/** Se dispara cuando el admin da por cerrada una fase concreta (ej. la de grupos) */
 export async function resolveStage(req: Request, res: Response) {
   const config = await loadTournamentConfig();
   try {
     await bracketService.resolveStage(config, req.params.stageId);
-    res.json({ ok: true });
+    res.json({ status: { code: 'OK', message: `Fase "${req.params.stageId}" resuelta` } });
   } catch (err) {
-    res.status(400).json({ error: err instanceof Error ? err.message : 'Error resolviendo la fase' });
+    return apiError(res, 400, 'RESOLVE_FAILED', err instanceof Error ? err.message : 'Error resolviendo la fase');
   }
 }

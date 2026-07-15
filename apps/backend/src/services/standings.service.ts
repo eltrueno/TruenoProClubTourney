@@ -30,7 +30,7 @@ export async function computeGroupStandings(
   for (const series of groupSeries) {
     if (!series.teamA || !series.teamB || !series.group) continue;
 
-    const confirmed = series.matches.filter((m) => m.status === 'confirmado');
+    const confirmed = series.matches.filter((m) => m.status === 'confirmed');
     const goalsA = confirmed.reduce((sum, m) => sum + (m.effective.scoreA ?? 0), 0);
     const goalsB = confirmed.reduce((sum, m) => sum + (m.effective.scoreB ?? 0), 0);
 

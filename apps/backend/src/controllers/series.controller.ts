@@ -4,6 +4,10 @@ import * as bracketService from '../services/bracket.service.js';
 import * as eaService from '../services/ea.service.js';
 import { loadTournamentConfig } from '../config/tournament.loader.js';
 
+function apiError(res: Response, httpStatus: number, code: string, message: string) {
+  return res.status(httpStatus).json({ status: { code, message } });
+}
+
 export async function list(_req: Request, res: Response) {
   const series = await seriesService.listSeries();
   res.json(series);
@@ -11,7 +15,7 @@ export async function list(_req: Request, res: Response) {
 
 export async function getOne(req: Request, res: Response) {
   const series = await seriesService.getSeriesById(req.params.id);
-  if (!series) return res.status(404).json({ error: 'Serie no encontrada' });
+  if (!series) return apiError(res, 404, 'NOT_FOUND', 'Serie no encontrada');
   res.json(series);
 }
 
@@ -20,11 +24,10 @@ export async function listMine(req: Request, res: Response) {
   res.json(series);
 }
 
-/** Lista los partidos recientes de EA del club del capitán, para elegir uno */
 export async function listEaCandidates(req: Request, res: Response) {
   const { eaClubId } = req.query;
   if (!eaClubId || typeof eaClubId !== 'string') {
-    return res.status(400).json({ error: 'Falta eaClubId' });
+    return apiError(res, 400, 'BAD_REQUEST', 'Falta eaClubId');
   }
   const candidates = await eaService.listRecentClubMatches(eaClubId);
   res.json(candidates);
@@ -74,7 +77,7 @@ export async function confirm(req: Request, res: Response) {
 export async function edit(req: Request, res: Response) {
   const { scoreA, scoreB, playerStats, changeDescription } = req.body ?? {};
   if (scoreA == null || scoreB == null || !changeDescription) {
-    return res.status(400).json({ error: 'Faltan scoreA, scoreB o changeDescription' });
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan scoreA, scoreB o changeDescription');
   }
 
   try {
@@ -109,7 +112,7 @@ function handleServiceError(err: unknown, res: Response) {
       ALREADY_SET: 409,
       NOTHING_TO_CONFIRM: 400,
     };
-    return res.status(statusByCode[err.code] ?? 400).json({ error: err.message });
+    return res.status(statusByCode[err.code] ?? 400).json({ status: { code: err.code, message: err.message } });
   }
   throw err;
 }

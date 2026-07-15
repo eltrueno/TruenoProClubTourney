@@ -151,7 +151,7 @@ export async function propagateWinner(completedSeriesId: string): Promise<void> 
 }
 
 function getWinnerTeamId(series: ISeriesDoc): string | null {
-  const confirmed = series.matches.filter((m) => m.status === 'confirmado');
+  const confirmed = series.matches.filter((m) => m.status === 'confirmed');
   const winsA = confirmed.filter((m) => (m.effective.scoreA ?? 0) > (m.effective.scoreB ?? 0)).length;
   const winsB = confirmed.filter((m) => (m.effective.scoreB ?? 0) > (m.effective.scoreA ?? 0)).length;
 
