@@ -11,6 +11,8 @@ export interface IMatchPlayerDoc extends Omit<IMatchPlayer, 'editedAt'> {
 }
 
 export interface IMatchTeamDataDoc extends Omit<IMatchTeamData, 'stats' | 'players'> {
+  eaClubId?: string;
+  eaClubName?: string;
   stats: ITeamMatchStatsDoc;
   players: IMatchPlayerDoc[];
 }
@@ -94,6 +96,8 @@ const matchPlayerSchema = new Schema<IMatchPlayerDoc>(
 
 const matchTeamDataSchema = new Schema<IMatchTeamDataDoc>(
   {
+    eaClubId: { type: String },
+    eaClubName: { type: String },
     score: { type: Number, default: null },
     penaltiesScore: { type: Number, default: null },
     stats: { type: teamMatchStatsSchema, required: true },

@@ -127,6 +127,8 @@ function buildMatchTeamData(match: IClubMatches, clubId: string, isDnf: boolean)
   const penalties = detectPenalties(match, clubId);
 
   return {
+    eaClubId: clubId,
+    eaClubName: match.clubs[clubId]?.details?.name,
     score,
     penaltiesScore: penalties.hasPenalties ? penalties.penaltiesScore : undefined,
     stats: parseTeamStats(match.aggregate?.[clubId]),

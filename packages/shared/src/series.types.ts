@@ -63,6 +63,8 @@ export interface IMatchPlayer {
 }
 
 export interface IMatchTeamData {
+  eaClubId?: string;
+  eaClubName?: string;
   score: number | null;
   penaltiesScore?: number | null;
   stats: ITeamMatchStats;
@@ -121,6 +123,10 @@ export interface ISeries {
   usedEaMatchIds: string[];
   status: SeriesStatus;
   createdAt: string;
+}
+
+export interface IMySeriesResponse extends ISeries {
+  mySide: 'A' | 'B';
 }
 
 export interface IEaCandidateMatch {

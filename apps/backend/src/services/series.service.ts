@@ -45,6 +45,8 @@ function toMatchPlayerDoc(stat: IMatchPlayer, origin: 'ea' | 'manual' = 'ea'): I
 
 function toMatchTeamDataDoc(data: IMatchTeamData, origin: 'ea' | 'manual' = 'ea'): IMatchTeamDataDoc {
   return {
+    eaClubId: data.eaClubId,
+    eaClubName: data.eaClubName,
     score: data.score,
     penaltiesScore: data.penaltiesScore,
     stats: { ...data.stats },
@@ -78,7 +80,7 @@ export async function listSeries(): Promise<ISeries[]> {
 }
 
 /** Series donde el usuario es capitan de alguno de los dos equipos, y aún no están completadas */
-export async function listSeriesForCaptain(userId: string): Promise<ISeries[]> {
+export async function listSeriesForCaptain(userId: string): Promise<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]> {
   const teamId = await getTeamIdForCaptain(userId);
   if (!teamId) return [];
 
@@ -87,7 +89,13 @@ export async function listSeriesForCaptain(userId: string): Promise<ISeries[]> {
     status: { $ne: 'completed' },
   }).sort({ round: 1, createdAt: 1 });
 
-  return docs.map(toISeries);
+  return docs.map((doc) => {
+    const s = toISeries(doc);
+    return {
+      ...s,
+      mySide: s.teamA === teamId ? 'A' : 'B',
+    };
+  });
 }
 
 export async function getSeriesById(id: string): Promise<ISeries | null> {
@@ -273,7 +281,7 @@ export async function editMatch(
   seriesId: string,
   position: number,
   requesterUserId: string,
-  patch: { teamA: IMatchTeamData; teamB: IMatchTeamData },
+  patch: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } },
   changeDescription: string
 ): Promise<ISeries> {
   const series = await SeriesModel.findById(seriesId);
@@ -282,10 +290,15 @@ export async function editMatch(
   await resolveSide(series, requesterUserId);
   const match = findMatch(series, position);
 
-  match.effective = {
-    teamA: toMatchTeamDataDoc(patch.teamA),
-    teamB: toMatchTeamDataDoc(patch.teamB),
-  };
+  if (match.effective.teamA) {
+    match.effective.teamA.score = patch.teamA.score;
+    match.effective.teamA.penaltiesScore = patch.teamA.penaltiesScore ?? null;
+  }
+  if (match.effective.teamB) {
+    match.effective.teamB.score = patch.teamB.score;
+    match.effective.teamB.penaltiesScore = patch.teamB.penaltiesScore ?? null;
+  }
+  
   match.edits.push({ by: requesterUserId, at: new Date(), change: changeDescription });
 
   // Al editar, se reabre la confirmacion: ambos deben volver a confirmar el nuevo resultado
@@ -302,16 +315,22 @@ export async function resolveDispute(
   seriesId: string,
   position: number,
   adminUserId: string,
-  input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
+  input: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } }
 ): Promise<ISeries> {
   const series = await SeriesModel.findById(seriesId);
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   const match = findMatch(series, position);
-  match.effective = {
-    teamA: toMatchTeamDataDoc(input.teamA),
-    teamB: toMatchTeamDataDoc(input.teamB),
-  };
+  
+  if (match.effective.teamA) {
+    match.effective.teamA.score = input.teamA.score;
+    match.effective.teamA.penaltiesScore = input.teamA.penaltiesScore ?? null;
+  }
+  if (match.effective.teamB) {
+    match.effective.teamB.score = input.teamB.score;
+    match.effective.teamB.penaltiesScore = input.teamB.penaltiesScore ?? null;
+  }
+  
   match.edits.push({
     by: adminUserId,
     at: new Date(),

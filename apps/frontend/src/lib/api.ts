@@ -34,7 +34,7 @@ export const api = {
   getTeams: () => apiFetch<ITeam[]>('/teams'),
 
   // Capitán
-  getMySeries: () => apiFetch<ISeries[]>('/series/mine'),
+  getMySeries: () => apiFetch<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>('/series/mine'),
   getMyTeam: () => apiFetch<ITeam>('/teams/mine'),
   getEaCandidates: (eaClubId: string) =>
     apiFetch<IEaCandidateMatch[]>(`/series/ea/candidates?eaClubId=${eaClubId}`),
@@ -45,7 +45,7 @@ export const api = {
     }),
   confirmMatch: (seriesId: string, position: number) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/confirm`, { method: 'POST' }),
-  editMatch: (seriesId: string, position: number, body: { teamA: any; teamB: any; changeDescription: string }) =>
+  editMatch: (seriesId: string, position: number, body: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null }; changeDescription: string }) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}`, {
       method: 'PATCH',
       body: JSON.stringify(body),

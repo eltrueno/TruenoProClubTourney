@@ -5,7 +5,7 @@ import { api, ApiError } from '../lib/api';
 import { useAuth } from '@/composables/useAuth';
 
 const { isLoggedIn, isPending, user, loginWithTwitchPopup } = useAuth();
-const series = ref<ISeries[]>([]);
+const series = ref<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>([]);
 const loading = ref(true);
 const globalError = ref<string | null>(null);
 
@@ -43,7 +43,7 @@ async function saveEaClubId() {
 async function loadMySeries() {
   try {
     const [s, t] = await Promise.all([api.getMySeries(), api.getMyTeam()]);
-    series.value = s;
+    series.value = s as import('@trueno-proclub-tourney/shared').IMySeriesResponse[];
     myTeam.value = t;
   } catch (e) {
     globalError.value = e instanceof Error ? e.message : 'Error cargando tus partidos';
@@ -85,7 +85,7 @@ async function selectCandidate(candidate: IEaCandidateMatch) {
   slotError.value[key] = '';
   try {
     const updated = await api.selectCandidate(seriesId, position, candidate);
-    series.value = series.value.map((s) => s.id === seriesId ? updated : s);
+    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
     addingSlot.value = null;
   } catch (e) {
     slotError.value[key] = e instanceof Error ? e.message : 'Error';
@@ -98,7 +98,7 @@ async function confirm(seriesId: string, position: number) {
   slotError.value[key] = '';
   try {
     const updated = await api.confirmMatch(seriesId, position);
-    series.value = series.value.map((s) => s.id === seriesId ? updated : s);
+    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
   } catch (e) {
     slotError.value[key] = e instanceof ApiError ? e.message : 'Error confirmando';
   } finally {
@@ -124,11 +124,11 @@ async function submitEdit() {
   slotError.value[key] = '';
   try {
     const updated = await api.editMatch(seriesId, position, {
-      teamA: { score: scoreA, penaltiesScore: penA, stats: { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 }, players: [] },
-      teamB: { score: scoreB, penaltiesScore: penB, stats: { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 }, players: [] },
+      teamA: { score: scoreA, penaltiesScore: penA },
+      teamB: { score: scoreB, penaltiesScore: penB },
       changeDescription: editDescription.value,
     });
-    series.value = series.value.map((s) => s.id === seriesId ? updated : s);
+    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
     editingSlot.value = null;
   } catch (e) {
     slotError.value[key] = e instanceof Error ? e.message : 'Error';
@@ -232,8 +232,8 @@ function formatMatchScore(teamData: any) {
                   <!-- Confirmaciones -->
                   <div v-if="match.status === 'pending_confirmation'" class="text-xs opacity-50 mt-1">
                     <span v-if="match.confirmations?.byTeamA && match.confirmations?.byTeamB">Ambos confirmaron</span>
-                    <span v-else-if="match.confirmations?.byTeamA">Tu equipo confirmó — esperando al rival</span>
-                    <span v-else-if="match.confirmations?.byTeamB">El rival confirmó — falta tu confirmación</span>
+                    <span v-else-if="match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']" class="text-success">Tu equipo confirmó — esperando al rival</span>
+                    <span v-else>El rival confirmó — falta tu confirmación</span>
                   </div>
 
                   <!-- Disputa -->
@@ -261,10 +261,10 @@ function formatMatchScore(teamData: any) {
                     <button
                       class="btn btn-sm btn-success"
                       :class="{ 'loading loading-spinner': confirming[slotKey(s.id, match.position)] }"
-                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.byTeamA"
+                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']"
                       @click="confirm(s.id, match.position)"
                     >
-                      {{ match.confirmations?.byTeamA ? 'Ya confirmado' : 'Todo correcto' }}
+                      {{ match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB'] ? 'Ya confirmado' : 'Todo correcto' }}
                     </button>
                     <button
                       class="btn btn-sm btn-outline btn-warning"
@@ -291,16 +291,51 @@ function formatMatchScore(teamData: any) {
         <div v-else-if="candidates.length === 0" class="opacity-50 text-sm text-center py-4">
           No se encontraron partidos recientes en EA.
         </div>
-        <div v-else class="space-y-2 max-h-72 overflow-y-auto">
-          <button
+        <div v-else class="space-y-2 max-h-96 overflow-y-auto pr-2">
+          <div
             v-for="c in candidates"
             :key="c.eaMatchId"
-            class="btn btn-outline btn-sm w-full justify-between"
+            class="card bg-base-200 shadow-sm cursor-pointer hover:bg-base-300 transition-colors"
             @click="selectCandidate(c)"
           >
-            <span class="tabular-nums">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</span>
-            <span class="text-xs opacity-60">{{ new Date(c.playedAt).toLocaleDateString('es') }}</span>
-          </button>
+            <div class="card-body p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs opacity-60">{{ new Date(c.playedAt).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }) }}</span>
+                <span class="badge badge-xs" :class="(c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'badge-success' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'badge-error' : 'badge-warning'">
+                  {{ (c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'Victoria' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'Derrota' : 'Empate' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between font-bold text-lg tabular-nums">
+                <div class="flex-1 text-right">
+                  <div class="text-sm font-normal">{{ c.teamA.eaClubName ?? `Club ${c.teamA.eaClubId ?? '?'}` }}</div>
+                </div>
+                <div class="px-3 whitespace-nowrap">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</div>
+                <div class="flex-1 text-left">
+                  <div class="text-sm font-normal">{{ c.teamB.eaClubName ?? `Club ${c.teamB.eaClubId ?? '?'}` }}</div>
+                </div>
+              </div>
+              
+              <!-- Scorers -->
+              <div class="mt-2 text-xs opacity-75 flex justify-between gap-4">
+                <div class="flex-1 text-right">
+                  <span v-for="p in c.teamA.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
+                    ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
+                  </span>
+                </div>
+                <div class="flex-1 text-left">
+                  <span v-for="p in c.teamB.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
+                    ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- DNF / PEN -->
+              <div v-if="c.winnerByDnf || c.winnerByPen" class="mt-2 flex gap-1 justify-center">
+                <span v-if="c.winnerByDnf" class="badge badge-error badge-outline badge-xs">DNF</span>
+                <span v-if="c.winnerByPen" class="badge badge-info badge-outline badge-xs">Penaltis</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="modal-action">
           <button class="btn btn-ghost btn-sm" @click="addingSlot = null">Cancelar</button>
