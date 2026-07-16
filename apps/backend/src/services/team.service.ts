@@ -1,6 +1,8 @@
 import type { ITeam, ITeamCreateInput } from '@trueno-proclub-tourney/shared';
 import { TeamModel, type ITeamDoc } from '../models/Team.model.js';
 import { CaptainModel } from '../models/Captain.model.js';
+import * as eaService from './ea.service.js';
+import { getPublicUserName } from './authUser.service.js';
 
 function toITeam(doc: ITeamDoc): ITeam {
   return {
@@ -10,20 +12,31 @@ function toITeam(doc: ITeamDoc): ITeam {
     logoUrl: doc.logoUrl,
     group: doc.group,
     eaClubId: doc.eaClubId,
+    eaClubName: doc.eaClubName,
     eaClubIdSetBy: doc.eaClubIdSetBy,
     eaClubIdSetAt: doc.eaClubIdSetAt?.toISOString(),
     createdAt: doc.createdAt.toISOString(),
   };
 }
 
+/** Añade captainName a una lista de equipos haciendo un solo join contra Captain (sin llamar al auth server, usa el userName ya cacheado ahi). */
+async function attachCaptainNames(teams: ITeam[]): Promise<ITeam[]> {
+  if (teams.length === 0) return teams;
+  const captains = await CaptainModel.find({ teamId: { $in: teams.map((t) => t.id) } });
+  const nameByTeamId = new Map(captains.map((c) => [c.teamId.toString(), c.userName]));
+  return teams.map((t) => ({ ...t, captainName: nameByTeamId.get(t.id) }));
+}
+
 export async function listTeams(): Promise<ITeam[]> {
   const docs = await TeamModel.find().sort({ group: 1, name: 1 });
-  return docs.map(toITeam);
+  return attachCaptainNames(docs.map(toITeam));
 }
 
 export async function getTeamById(id: string): Promise<ITeam | null> {
   const doc = await TeamModel.findById(id);
-  return doc ? toITeam(doc) : null;
+  if (!doc) return null;
+  const [team] = await attachCaptainNames([toITeam(doc)]);
+  return team;
 }
 
 export async function createTeam(input: ITeamCreateInput): Promise<ITeam> {
@@ -42,11 +55,22 @@ export async function updateTeam(
   return doc ? toITeam(doc) : null;
 }
 
-/** Solo el admin puede asignar/quitar capitan */
+/**
+ * Solo el admin puede asignar/quitar capitan.
+ * Resolvemos y cacheamos el nombre publico del usuario contra el auth server;
+ * si falla, se guarda sin nombre y quedara sin mostrar hasta la proxima asignacion.
+ */
 export async function setTeamCaptain(teamId: string, userId: string) {
+  let userName: string | undefined;
+  try {
+    userName = await getPublicUserName(userId);
+  } catch (err) {
+    console.warn(`[team.service] No se pudo resolver el nombre del usuario ${userId}:`, err);
+  }
+
   return CaptainModel.findOneAndUpdate(
     { teamId },
-    { userId, teamId },
+    { userId, userName, teamId },
     { upsert: true, new: true }
   );
 }
@@ -69,10 +93,24 @@ export async function setEaClubId(
     throw new Error('FORBIDDEN');
   }
 
-  const doc = await TeamModel.findByIdAndUpdate(
-    teamId,
-    { eaClubId, eaClubIdSetBy: requesterUserId, eaClubIdSetAt: new Date() },
-    { new: true }
-  );
+  // Resolvemos el nombre del club contra la API de EA. Si falla (ID invalido,
+  // EA caida...) no bloqueamos el guardado del eaClubId.
+  let eaClubName: string | undefined;
+  try {
+    eaClubName = await eaService.getClubName(eaClubId);
+  } catch (err) {
+    console.warn(`[team.service] No se pudo resolver el nombre del club EA ${eaClubId}:`, err);
+  }
+
+  // Si no se pudo resolver el nombre, no lo incluimos en el $set: asi no
+  // pisamos con undefined un nombre que ya estuviera guardado de antes.
+  const update: Record<string, unknown> = {
+    eaClubId,
+    eaClubIdSetBy: requesterUserId,
+    eaClubIdSetAt: new Date(),
+  };
+  if (eaClubName) update.eaClubName = eaClubName;
+
+  const doc = await TeamModel.findByIdAndUpdate(teamId, update, { new: true });
   return doc ? toITeam(doc) : null;
 }

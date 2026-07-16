@@ -18,6 +18,7 @@ const teamSchema = new Schema<ITeamDoc>({
   logoUrl: { type: String, trim: true },
   group: { type: String, trim: true },
   eaClubId: { type: String, trim: true },
+  eaClubName: { type: String, trim: true },
   eaClubIdSetBy: { type: String },
   eaClubIdSetAt: { type: Date },
   createdAt: { type: Date, default: Date.now },

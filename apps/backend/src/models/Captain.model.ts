@@ -9,6 +9,7 @@ export interface ICaptainDoc extends Omit<ICaptain, 'id' | 'teamId' | 'createdAt
 
 const captainSchema = new Schema<ICaptainDoc>({
   userId: { type: String, required: true, index: true },
+  userName: { type: String, trim: true },
   teamId: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
   createdAt: { type: Date, default: Date.now },
 });

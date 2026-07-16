@@ -11,8 +11,12 @@ export interface ITeam {
   group?: string;
   /** Lo configura el propio capitan desde su panel, no el admin */
   eaClubId?: string;
+  /** Nombre del club en EA, resuelto automaticamente al guardar el eaClubId */
+  eaClubName?: string;
   eaClubIdSetBy?: string;
   eaClubIdSetAt?: string;
+  /** Nombre publico del capitan actual del equipo, si tiene uno asignado */
+  captainName?: string;
   createdAt: string;
 }
 

@@ -197,15 +197,16 @@ function formatMatchScore(teamData: any) {
           </div>
           <div>
             <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>
-            <p class="text-xs opacity-60">Capitán: {{ user?.displayName }}</p>
+            <p class="text-xs opacity-60">Capitán: {{ user?.name }}</p>
           </div>
         </div>
         
         <!-- Configuración de EA Club ID -->
         <div class="flex items-center gap-2">
           <div v-if="myTeam.eaClubId" class="text-right">
-            <div class="text-xs opacity-60 mb-1">EA Club ID configurado</div>
-            <div class="font-mono text-sm font-bold bg-base-300 px-2 py-1 rounded">{{ myTeam.eaClubId }}</div>
+            <div class="text-xs opacity-60 mb-1">Club EA configurado</div>
+            <div class="font-bold text-sm">{{ myTeam.eaClubName ?? '(nombre no disponible)' }}</div>
+            <div class="font-mono text-xs opacity-60 bg-base-300 px-2 py-0.5 rounded inline-block mt-0.5">ID {{ myTeam.eaClubId }}</div>
           </div>
           <div v-else class="text-right text-warning">
             <div class="text-xs font-bold mb-1">¡Falta EA Club ID!</div>

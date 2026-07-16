@@ -23,6 +23,14 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, baseDelayMs = 100
   }
 }
 
+/** Resuelve el nombre de un club en EA a partir de su clubId. Usa la misma cola/retry que el resto de llamadas a EA. */
+export async function getClubName(eaClubId: string): Promise<string | undefined> {
+  const info = await eaQueue.add(() =>
+    withRetry(() => club.getClubInfo(PLATFORM, Number(eaClubId)))
+  );
+  return info?.name;
+}
+
 export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandidateMatch[]> {
   const key = `club-matches:${eaClubId}`;
   const cached = cache.get(key);
