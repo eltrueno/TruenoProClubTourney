@@ -78,18 +78,17 @@ async function resolveGroupsStage(config: ITournamentConfig, stage: IGroupsStage
     const remaining = [...bestOthers];
 
     for (const series of dependentSeries) {
-      const sourceA = series.sourceA as ISeriesSource | undefined;
-      const sourceB = series.sourceB as ISeriesSource | undefined;
-      const othersSide =
-        sourceA?.type === 'stageOthers' && sourceA.stageId === stage.id
-          ? 'A'
-          : sourceB?.type === 'stageOthers' && sourceB.stageId === stage.id
-            ? 'B'
-            : null;
-      if (!othersSide) continue;
+      if (!series.bracketSlot) continue;
 
       const slotDef = thirdPlacedSlots.find((s) => s.slot === series.bracketSlot);
-      const excluded = slotDef?.excludeGroups ?? [];
+      if (!slotDef) continue;
+
+      // El lado "others" es siempre el contrario al lado fijo declarado en la config
+      const othersSide: 'A' | 'B' = slotDef.fixedSide === 'teamA' ? 'B' : 'A';
+      const othersSource = (othersSide === 'A' ? series.sourceA : series.sourceB) as ISeriesSource | undefined;
+      if (!othersSource || othersSource.type !== 'stageOthers' || othersSource.stageId !== stage.id) continue;
+
+      const excluded = slotDef.excludeGroups ?? [];
 
       const idx = remaining.findIndex((row) => !excluded.includes(row.group));
       if (idx === -1) continue; // no deberia pasar con una config bien formada

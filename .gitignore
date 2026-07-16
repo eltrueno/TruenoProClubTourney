@@ -8,3 +8,4 @@ build/
 .DS_Store
 .astro/
 .vscode/settings.json
+apps/backend/src/scripts/

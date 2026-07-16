@@ -31,7 +31,10 @@ export interface IFixedCrossing {
 
 export interface IThirdPlacedSlot {
   slot: string;
-  teamASource: IBracketSource;
+  /** lado de la serie que ocupa la posicion fija (p.ej. 1o de un grupo concreto).
+   *  El lado contrario es el que rellena el resolver con el mejor "other" disponible. */
+  fixedSide: 'teamA' | 'teamB';
+  fixedSource: IBracketSource;
   /** referencia a la fase de grupos de la que salen los "others" */
   othersStageId: string;
   /** grupos cuyo clasificado NO puede caer aqui (tipicamente el propio grupo del rival) */
