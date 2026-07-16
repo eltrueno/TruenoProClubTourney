@@ -231,9 +231,9 @@ function formatMatchScore(teamData: any) {
 
                   <!-- Confirmaciones -->
                   <div v-if="match.status === 'pending_confirmation'" class="text-xs opacity-50 mt-1">
-                    <span v-if="match.confirmations.byTeamA && match.confirmations.byTeamB">Ambos confirmaron</span>
-                    <span v-else-if="match.confirmations.byTeamA">Tu equipo confirmó — esperando al rival</span>
-                    <span v-else-if="match.confirmations.byTeamB">El rival confirmó — falta tu confirmación</span>
+                    <span v-if="match.confirmations?.byTeamA && match.confirmations?.byTeamB">Ambos confirmaron</span>
+                    <span v-else-if="match.confirmations?.byTeamA">Tu equipo confirmó — esperando al rival</span>
+                    <span v-else-if="match.confirmations?.byTeamB">El rival confirmó — falta tu confirmación</span>
                   </div>
 
                   <!-- Disputa -->
@@ -261,10 +261,10 @@ function formatMatchScore(teamData: any) {
                     <button
                       class="btn btn-sm btn-success"
                       :class="{ 'loading loading-spinner': confirming[slotKey(s.id, match.position)] }"
-                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations.byTeamA"
+                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.byTeamA"
                       @click="confirm(s.id, match.position)"
                     >
-                      {{ match.confirmations.byTeamA ? 'Ya confirmado' : 'Todo correcto' }}
+                      {{ match.confirmations?.byTeamA ? 'Ya confirmado' : 'Todo correcto' }}
                     </button>
                     <button
                       class="btn btn-sm btn-outline btn-warning"
