@@ -1,15 +1,10 @@
-import { Schema, model, type Types } from 'mongoose';
+import { Schema, model, type Types, type Document } from 'mongoose';
 
-export interface ITeamDoc {
-  _id: Types.ObjectId;
-  name: string;
-  countryCode?: string;
-  logoUrl?: string;
-  group?: string;
-  eaClubId?: string;
-  eaClubIdSetBy?: string;
-  eaClubIdSetAt?: Date;
+import type { ITeam } from '@trueno-proclub-tourney/shared';
+
+export interface ITeamDoc extends Omit<ITeam, 'id' | 'createdAt' | 'eaClubIdSetAt'>, Document {
   createdAt: Date;
+  eaClubIdSetAt?: Date;
 }
 
 const teamSchema = new Schema<ITeamDoc>({

@@ -2,8 +2,8 @@ import type {
   IPlayerAggregateStats,
   IPlayerMatchAppearance,
   IPlayerProfile,
-} from '@trueno-pro-club-tourney/shared';
-import { SeriesModel, type IMatchPlayerStatDoc } from '../models/Series.model.js';
+} from '@trueno-proclub-tourney/shared';
+import { SeriesModel, type IMatchPlayerDoc } from '../models/Series.model.js';
 
 interface Accumulator {
   eaPlayerId: string;
@@ -53,10 +53,10 @@ function newAccumulator(eaPlayerId: string, playerName: string): Accumulator {
   };
 }
 
-function addStat(acc: Accumulator, stat: IMatchPlayerStatDoc, result: 'win' | 'loss' | 'draw', playedAt: number): void {
+function addStat(acc: Accumulator, stat: IMatchPlayerDoc, result: 'win' | 'loss' | 'draw', playedAt: number): void {
   // Se queda con el gamertag mas reciente, por si ha cambiado de nombre
   if (playedAt >= acc.lastPlayedAt) {
-    acc.playerName = stat.playerName;
+    acc.playerName = stat.name;
     acc.lastPlayedAt = playedAt;
   }
 
@@ -116,18 +116,32 @@ async function* iterConfirmedAppearances() {
   for (const series of seriesList) {
     for (const match of series.matches) {
       if (match.status !== 'confirmed') continue;
-      if (match.effective.scoreA == null || match.effective.scoreB == null) continue;
+      if (!match.effective.teamA || !match.effective.teamB) continue;
+      
+      const scoreA = match.effective.teamA.score;
+      const scoreB = match.effective.teamB.score;
+      if (scoreA == null || scoreB == null) continue;
+      
+      const penA = match.effective.teamA.penaltiesScore ?? 0;
+      const penB = match.effective.teamB.penaltiesScore ?? 0;
 
-      const scoreA = match.effective.scoreA;
-      const scoreB = match.effective.scoreB;
       const playedAt = (match.original?.fetchedAt ?? series.createdAt).getTime();
+      
+      let teamAWon = scoreA > scoreB;
+      let teamBWon = scoreB > scoreA;
+      if (scoreA === scoreB) {
+        teamAWon = penA > penB;
+        teamBWon = penB > penA;
+      }
 
-      for (const stat of match.effective.playerStats) {
-        const won = stat.team === 'A' ? scoreA > scoreB : scoreB > scoreA;
-        const lost = stat.team === 'A' ? scoreA < scoreB : scoreB < scoreA;
-        const result: 'win' | 'loss' | 'draw' = won ? 'win' : lost ? 'loss' : 'draw';
-
-        yield { series, match, stat, scoreA, scoreB, result, playedAt };
+      for (const stat of match.effective.teamA.players) {
+        const result: 'win' | 'loss' | 'draw' = teamAWon ? 'win' : teamBWon ? 'loss' : 'draw';
+        yield { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam: 'A' as const };
+      }
+      
+      for (const stat of match.effective.teamB.players) {
+        const result: 'win' | 'loss' | 'draw' = teamBWon ? 'win' : teamAWon ? 'loss' : 'draw';
+        yield { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam: 'B' as const };
       }
     }
   }
@@ -138,8 +152,8 @@ export async function getAllPlayerStats(): Promise<IPlayerAggregateStats[]> {
   const acc = new Map<string, Accumulator>();
 
   for await (const { stat, result, playedAt } of iterConfirmedAppearances()) {
-    if (!acc.has(stat.eaPlayerId)) acc.set(stat.eaPlayerId, newAccumulator(stat.eaPlayerId, stat.playerName));
-    addStat(acc.get(stat.eaPlayerId)!, stat, result, playedAt);
+    if (!acc.has(stat.eaId)) acc.set(stat.eaId, newAccumulator(stat.eaId, stat.name));
+    addStat(acc.get(stat.eaId)!, stat, result, playedAt);
   }
 
   return Array.from(acc.values())
@@ -152,8 +166,8 @@ export async function getPlayerProfile(eaPlayerId: string): Promise<IPlayerProfi
   const acc = newAccumulator(eaPlayerId, eaPlayerId);
   const matches: (IPlayerMatchAppearance & { _playedAt: number })[] = [];
 
-  for await (const { series, match, stat, scoreA, scoreB, result, playedAt } of iterConfirmedAppearances()) {
-    if (stat.eaPlayerId !== eaPlayerId) continue;
+  for await (const { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam } of iterConfirmedAppearances()) {
+    if (stat.eaId !== eaPlayerId) continue;
 
     addStat(acc, stat, result, playedAt);
     matches.push({
@@ -164,7 +178,7 @@ export async function getPlayerProfile(eaPlayerId: string): Promise<IPlayerProfi
       position: match.position,
       teamAId: series.teamA ? series.teamA.toString() : null,
       teamBId: series.teamB ? series.teamB.toString() : null,
-      playedTeam: stat.team,
+      playedTeam,
       result,
       scoreA,
       scoreB,

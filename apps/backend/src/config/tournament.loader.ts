@@ -1,4 +1,4 @@
-import type { ITournamentConfig } from '@trueno-pro-club-tourney/shared';
+import type { ITournamentConfig } from '@trueno-proclub-tourney/shared';
 
 /**
  * Carga src/config/tournament.<TOURNAMENT_CONFIG>.ts segun la env var.

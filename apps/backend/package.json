@@ -1,5 +1,5 @@
 {
-  "name": "@trueno-pro-club-tourney/backend",
+  "name": "@trueno-proclub-tourney/backend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@trueno-pro-club-tourney/shared": "workspace:*",
-    "@trueno-proclub-services/auth": "workspace:*",
-    "@trueno-proclub-services/eafcapi": "workspace:*",
+    "@trueno-proclub-tourney/shared": "workspace:*",
+    "@trueno-proclub-tourney/auth": "workspace:*",
+    "@trueno-proclub-tourney/eafcapi": "workspace:*",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

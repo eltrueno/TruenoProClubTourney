@@ -4,7 +4,7 @@ import type {
   IGroupsStageConfig,
   IGroupStanding,
   ISeriesSource,
-} from '@trueno-pro-club-tourney/shared';
+} from '@trueno-proclub-tourney/shared';
 import { SeriesModel, type ISeriesDoc } from '../models/Series.model.js';
 import { computeGroupStandings } from './standings.service.js';
 import { createSeries } from './series.service.js';
@@ -151,8 +151,26 @@ export async function propagateWinner(completedSeriesId: string): Promise<void> 
 
 function getWinnerTeamId(series: ISeriesDoc): string | null {
   const confirmed = series.matches.filter((m) => m.status === 'confirmed');
-  const winsA = confirmed.filter((m) => (m.effective.scoreA ?? 0) > (m.effective.scoreB ?? 0)).length;
-  const winsB = confirmed.filter((m) => (m.effective.scoreB ?? 0) > (m.effective.scoreA ?? 0)).length;
+
+  const winsA = confirmed.filter(
+    (m) => {
+      const scoreA = m.effective.teamA?.score ?? 0;
+      const scoreB = m.effective.teamB?.score ?? 0;
+      if (scoreA > scoreB) return true;
+      if (scoreA === scoreB) return (m.effective.teamA?.penaltiesScore ?? 0) > (m.effective.teamB?.penaltiesScore ?? 0);
+      return false;
+    }
+  ).length;
+
+  const winsB = confirmed.filter(
+    (m) => {
+      const scoreA = m.effective.teamA?.score ?? 0;
+      const scoreB = m.effective.teamB?.score ?? 0;
+      if (scoreB > scoreA) return true;
+      if (scoreB === scoreA) return (m.effective.teamB?.penaltiesScore ?? 0) > (m.effective.teamA?.penaltiesScore ?? 0);
+      return false;
+    }
+  ).length;
 
   if (winsA === winsB) return null;
   return winsA > winsB ? (series.teamA?.toString() ?? null) : (series.teamB?.toString() ?? null);

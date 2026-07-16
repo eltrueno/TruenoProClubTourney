@@ -1,24 +1,23 @@
 import type {
   ISeries,
   IMatch,
-  IMatchPlayerStat,
+  IMatchPlayer,
   IEaCandidateMatch,
-} from '@trueno-pro-club-tourney/shared';
-import { SeriesModel, type ISeriesDoc, type IMatchDoc } from '../models/Series.model.js';
+  IMatchTeamData,
+} from '@trueno-proclub-tourney/shared';
+import { SeriesModel, type ISeriesDoc, type IMatchDoc, type IMatchPlayerDoc, type IMatchTeamDataDoc } from '../models/Series.model.js';
 import { getTeamIdForCaptain } from './captain.service.js';
 
 function toIMatch(doc: IMatchDoc): IMatch {
   return JSON.parse(JSON.stringify(doc)); // subdocumento plano, basta serializar
 }
 
-/** El tipo compartido usa string para fechas (viaja por JSON); mongoose quiere Date */
-function toPlayerStatDoc(stat: IMatchPlayerStat) {
+function toMatchPlayerDoc(stat: IMatchPlayer, origin: 'ea' | 'manual' = 'ea'): IMatchPlayerDoc {
   return {
-    eaPlayerId: stat.eaPlayerId,
-    playerName: stat.playerName,
-    team: stat.team,
+    eaId: stat.eaId,
+    name: stat.name,
     position: stat.position,
-    origin: stat.origin,
+    origin: stat.origin ?? origin,
     rating: stat.rating,
     secondsPlayed: stat.secondsPlayed,
     manOfTheMatch: stat.manOfTheMatch,
@@ -41,6 +40,15 @@ function toPlayerStatDoc(stat: IMatchPlayerStat) {
     reflexSaves: stat.reflexSaves,
     editedBy: stat.editedBy,
     editedAt: stat.editedAt ? new Date(stat.editedAt) : undefined,
+  };
+}
+
+function toMatchTeamDataDoc(data: IMatchTeamData, origin: 'ea' | 'manual' = 'ea'): IMatchTeamDataDoc {
+  return {
+    score: data.score,
+    penaltiesScore: data.penaltiesScore,
+    stats: { ...data.stats },
+    players: data.players.map((p) => toMatchPlayerDoc(p, origin)),
   };
 }
 
@@ -104,7 +112,7 @@ export async function createSeries(input: {
     position: i + 1,
     status: 'unselected',
     isManual: false,
-    effective: { scoreA: null, scoreB: null, playerStats: [] },
+    effective: { teamA: null, teamB: null } as any,
     edits: [],
     confirmations: {},
   }));
@@ -132,12 +140,8 @@ async function resolveSide(
 function flipCandidateSides(candidate: IEaCandidateMatch): IEaCandidateMatch {
   return {
     ...candidate,
-    scoreA: candidate.scoreB,
-    scoreB: candidate.scoreA,
-    playerStats: candidate.playerStats.map((p) => ({
-      ...p,
-      team: p.team === 'A' ? 'B' : 'A',
-    })),
+    teamA: candidate.teamB,
+    teamB: candidate.teamA,
   };
 }
 
@@ -183,16 +187,16 @@ export async function selectCandidateForMatch(
 
   match.eaMatchId = normalized.eaMatchId;
   match.isManual = false;
+  match.winnerByDnf = normalized.winnerByDnf;
+  match.winnerByPen = normalized.winnerByPen;
   match.original = {
-    scoreA: normalized.scoreA,
-    scoreB: normalized.scoreB,
-    playerStats: normalized.playerStats.map(toPlayerStatDoc),
+    teamA: toMatchTeamDataDoc(normalized.teamA),
+    teamB: toMatchTeamDataDoc(normalized.teamB),
     fetchedAt: new Date(),
   };
   match.effective = {
-    scoreA: normalized.scoreA,
-    scoreB: normalized.scoreB,
-    playerStats: normalized.playerStats.map(toPlayerStatDoc),
+    teamA: toMatchTeamDataDoc(normalized.teamA),
+    teamB: toMatchTeamDataDoc(normalized.teamB),
   };
   match.status = 'pending_confirmation';
   series.usedEaMatchIds.push(candidate.eaMatchId);
@@ -206,7 +210,7 @@ export async function createManualMatch(
   seriesId: string,
   position: number,
   requesterUserId: string,
-  input: { scoreA: number; scoreB: number; playerStats: IMatchPlayerStat[] }
+  input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
 ): Promise<ISeries> {
   const series = await SeriesModel.findById(seriesId);
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
@@ -222,9 +226,8 @@ export async function createManualMatch(
   match.eaMatchId = undefined;
   match.original = undefined;
   match.effective = {
-    scoreA: input.scoreA,
-    scoreB: input.scoreB,
-    playerStats: input.playerStats.map((p) => toPlayerStatDoc({ ...p, origin: 'manual' as const })),
+    teamA: toMatchTeamDataDoc(input.teamA, 'manual'),
+    teamB: toMatchTeamDataDoc(input.teamB, 'manual'),
   };
   match.status = 'pending_confirmation';
 
@@ -244,15 +247,15 @@ export async function confirmMatch(
   const side = await resolveSide(series, requesterUserId);
   const match = findMatch(series, position);
 
-  if (match.effective.scoreA == null || match.effective.scoreB == null) {
+  if (!match.effective.teamA || !match.effective.teamB || match.effective.teamA.score == null || match.effective.teamB.score == null) {
     throw new ServiceError('NOTHING_TO_CONFIRM', 'Este slot todavia no tiene resultado');
   }
 
   const confirmation = {
     userId: requesterUserId,
     at: new Date(),
-    scoreA: match.effective.scoreA,
-    scoreB: match.effective.scoreB,
+    teamA: { score: match.effective.teamA.score, penaltiesScore: match.effective.teamA.penaltiesScore ?? undefined },
+    teamB: { score: match.effective.teamB.score, penaltiesScore: match.effective.teamB.penaltiesScore ?? undefined },
   };
 
   if (side === 'A') match.confirmations.byTeamA = confirmation;
@@ -270,7 +273,7 @@ export async function editMatch(
   seriesId: string,
   position: number,
   requesterUserId: string,
-  patch: { scoreA: number; scoreB: number; playerStats: IMatchPlayerStat[] },
+  patch: { teamA: IMatchTeamData; teamB: IMatchTeamData },
   changeDescription: string
 ): Promise<ISeries> {
   const series = await SeriesModel.findById(seriesId);
@@ -280,9 +283,8 @@ export async function editMatch(
   const match = findMatch(series, position);
 
   match.effective = {
-    scoreA: patch.scoreA,
-    scoreB: patch.scoreB,
-    playerStats: patch.playerStats.map(toPlayerStatDoc),
+    teamA: toMatchTeamDataDoc(patch.teamA),
+    teamB: toMatchTeamDataDoc(patch.teamB),
   };
   match.edits.push({ by: requesterUserId, at: new Date(), change: changeDescription });
 
@@ -300,16 +302,15 @@ export async function resolveDispute(
   seriesId: string,
   position: number,
   adminUserId: string,
-  input: { scoreA: number; scoreB: number; playerStats: IMatchPlayerStat[] }
+  input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
 ): Promise<ISeries> {
   const series = await SeriesModel.findById(seriesId);
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   const match = findMatch(series, position);
   match.effective = {
-    scoreA: input.scoreA,
-    scoreB: input.scoreB,
-    playerStats: input.playerStats.map(toPlayerStatDoc),
+    teamA: toMatchTeamDataDoc(input.teamA),
+    teamB: toMatchTeamDataDoc(input.teamB),
   };
   match.edits.push({
     by: adminUserId,
@@ -317,8 +318,8 @@ export async function resolveDispute(
     change: 'Disputa resuelta manualmente por un admin',
   });
   match.confirmations = {
-    byTeamA: { userId: adminUserId, at: new Date(), scoreA: input.scoreA, scoreB: input.scoreB },
-    byTeamB: { userId: adminUserId, at: new Date(), scoreA: input.scoreA, scoreB: input.scoreB },
+    byTeamA: { userId: adminUserId, at: new Date(), teamA: { score: input.teamA.score ?? 0, penaltiesScore: input.teamA.penaltiesScore ?? undefined }, teamB: { score: input.teamB.score ?? 0, penaltiesScore: input.teamB.penaltiesScore ?? undefined } },
+    byTeamB: { userId: adminUserId, at: new Date(), teamA: { score: input.teamA.score ?? 0, penaltiesScore: input.teamA.penaltiesScore ?? undefined }, teamB: { score: input.teamB.score ?? 0, penaltiesScore: input.teamB.penaltiesScore ?? undefined } },
   };
   match.status = 'confirmed';
 
@@ -328,7 +329,7 @@ export async function resolveDispute(
 }
 
 export async function listDisputes() {
-  const seriesWithDisputes = await SeriesModel.find({ 'matches.status': 'disputado' })
+  const seriesWithDisputes = await SeriesModel.find({ 'matches.status': 'disputed' })
     .populate('teamA', 'name countryCode')
     .populate('teamB', 'name countryCode');
 
@@ -351,7 +352,12 @@ function recomputeMatchStatus(match: IMatchDoc): void {
   const { byTeamA, byTeamB } = match.confirmations;
   if (!byTeamA || !byTeamB) return; // sigue pendiente hasta que confirmen los dos
 
-  const coincide = byTeamA.scoreA === byTeamB.scoreA && byTeamA.scoreB === byTeamB.scoreB;
+  const coincide = 
+    byTeamA.teamA.score === byTeamB.teamA.score && 
+    byTeamA.teamA.penaltiesScore === byTeamB.teamA.penaltiesScore &&
+    byTeamA.teamB.score === byTeamB.teamB.score &&
+    byTeamA.teamB.penaltiesScore === byTeamB.teamB.penaltiesScore;
+    
   match.status = coincide ? 'confirmed' : 'disputed';
 }
 
@@ -366,10 +372,23 @@ function recomputeSeriesStatus(series: ISeriesDoc): void {
 
   const winsNeeded = Math.ceil(series.bestOf / 2);
   const winsA = confirmed.filter(
-    (m) => (m.effective.scoreA ?? 0) > (m.effective.scoreB ?? 0)
+    (m) => {
+      const scoreA = m.effective.teamA?.score ?? 0;
+      const scoreB = m.effective.teamB?.score ?? 0;
+      if (scoreA > scoreB) return true;
+      if (scoreA === scoreB) return (m.effective.teamA?.penaltiesScore ?? 0) > (m.effective.teamB?.penaltiesScore ?? 0);
+      return false;
+    }
   ).length;
+  
   const winsB = confirmed.filter(
-    (m) => (m.effective.scoreB ?? 0) > (m.effective.scoreA ?? 0)
+    (m) => {
+      const scoreA = m.effective.teamA?.score ?? 0;
+      const scoreB = m.effective.teamB?.score ?? 0;
+      if (scoreB > scoreA) return true;
+      if (scoreB === scoreA) return (m.effective.teamB?.penaltiesScore ?? 0) > (m.effective.teamA?.penaltiesScore ?? 0);
+      return false;
+    }
   ).length;
 
   series.status = winsA >= winsNeeded || winsB >= winsNeeded ? 'completed' : 'in_progress';

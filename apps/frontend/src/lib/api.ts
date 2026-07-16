@@ -1,5 +1,5 @@
-import type { ISeries, ITeam } from '@trueno-pro-club-tourney/shared';
-import type { IEaCandidateMatch } from '@trueno-pro-club-tourney/shared';
+import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
+import type { IEaCandidateMatch } from '@trueno-proclub-tourney/shared';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -45,7 +45,7 @@ export const api = {
     }),
   confirmMatch: (seriesId: string, position: number) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/confirm`, { method: 'POST' }),
-  editMatch: (seriesId: string, position: number, body: { scoreA: number; scoreB: number; changeDescription: string }) =>
+  editMatch: (seriesId: string, position: number, body: { teamA: any; teamB: any; changeDescription: string }) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
@@ -68,7 +68,7 @@ export const api = {
 
   // Admin: fases y disputas
   listDisputes: () => apiFetch<any[]>('/admin/disputes'),
-  resolveDispute: (seriesId: string, position: number, body: { scoreA: number; scoreB: number }) =>
+  resolveDispute: (seriesId: string, position: number, body: { teamA: any; teamB: any }) =>
     apiFetch<ISeries>(`/admin/series/${seriesId}/matches/${position}/resolve`, {
       method: 'POST',
       body: JSON.stringify(body),

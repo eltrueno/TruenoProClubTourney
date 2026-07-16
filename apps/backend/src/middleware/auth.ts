@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { UserRole, type User } from '@trueno-proclub-services/auth';
+import { UserRole, type User } from '@trueno-proclub-tourney/auth';
 
 declare global {
   namespace Express {

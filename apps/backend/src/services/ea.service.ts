@@ -1,7 +1,7 @@
 import PQueue from 'p-queue';
-import { club, type TPlatformType } from '@trueno-proclub-services/eafcapi';
-import type { IClubMatches, IMatchClubPlayer } from '@trueno-proclub-services/eafcapi/dist/model/club.js';
-import type { IEaCandidateMatch, IMatchPlayerStat, PlayerPosition } from '@trueno-pro-club-tourney/shared';
+import { club, type TPlatformType } from '@trueno-proclub-tourney/eafcapi';
+import type { IClubMatches, IMatchClubPlayer, IMatchClub } from '@trueno-proclub-tourney/eafcapi/dist/model/club.js';
+import type { IEaCandidateMatch, IMatchPlayer, IMatchTeamData, ITeamMatchStats, PlayerPosition } from '@trueno-proclub-tourney/shared';
 
 const PLATFORM: TPlatformType = 'common-gen5';
 const CACHE_TTL_MS = 3 * 60 * 1000;
@@ -37,35 +37,52 @@ export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandid
   return candidates;
 }
 
-function toCandidateMatch(match: IClubMatches, ourClubId: string): IEaCandidateMatch {
-  const clubIds = Object.keys(match.clubs);
-  const opponentClubId = clubIds.find((id) => id !== ourClubId) ?? clubIds[1];
+function detectDnf(match: IClubMatches, clubIds: string[]): boolean {
+  const anyDnfFlag = clubIds.some((id) => match.clubs[id]?.winnerByDnf === '1');
+  if (!anyDnfFlag) return false;
 
+  // Heurística: Si EA dice DNF, los goles en 'clubs' suelen ser forzados a 3-0.
+  // Si los goles agregados no coinciden, es muy probable que sea un DNF real.
+  const forcedResult = clubIds.some((id) => Number(match.clubs[id]?.goals) === 3) &&
+    clubIds.some((id) => Number(match.clubs[id]?.goals) === 0);
+
+  const aggregateMismatches = clubIds.some((id) => Number(match.clubs[id]?.goals) !== Number(match.aggregate[id]?.goals));
+
+  return forcedResult && aggregateMismatches;
+}
+
+function detectPenalties(match: IClubMatches, clubId: string): { hasPenalties: boolean; penaltiesScore?: number } {
+  const goals = Number(match.clubs[clubId]?.goals ?? 0);
+  const score = Number(match.clubs[clubId]?.score ?? 0);
+  if (score > goals) {
+    return { hasPenalties: true, penaltiesScore: score - goals };
+  }
+  return { hasPenalties: false };
+}
+
+function parseTeamStats(aggregate: Record<string, number> | undefined): ITeamMatchStats {
+  if (!aggregate) {
+    return { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 };
+  }
   return {
-    eaMatchId: match.matchId,
-    playedAt: new Date(match.timestamp * 1000).toISOString(),
-    scoreA: Number(match.clubs[ourClubId]?.goals ?? 0),
-    scoreB: Number(match.clubs[opponentClubId]?.goals ?? 0),
-    playerStats: [
-      ...mapPlayers(match.players[ourClubId], 'A'),
-      ...mapPlayers(match.players[opponentClubId], 'B'),
-    ],
+    goals: Number(aggregate.goals ?? 0),
+    shots: Number(aggregate.shots ?? 0),
+    passesMade: Number(aggregate.passattempts ?? 0),
+    passesSuccess: Number(aggregate.passesmade ?? 0),
+    tacklesMade: Number(aggregate.tackleattempts ?? 0),
+    tacklesSuccess: Number(aggregate.tacklesmade ?? 0),
+    redCards: Number(aggregate.redcards ?? 0),
   };
 }
 
-function mapPlayers(
-  players: Record<string, IMatchClubPlayer> | undefined,
-  team: 'A' | 'B'
-): IMatchPlayerStat[] {
+function parseTeamPlayers(players: Record<string, IMatchClubPlayer> | undefined): IMatchPlayer[] {
   if (!players) return [];
 
-  // Los campos no tipados en IMatchClubPlayer se leen via `raw`
-  return Object.entries(players).map(([eaPlayerId, p]): IMatchPlayerStat => {
+  return Object.entries(players).map(([eaId, p]): IMatchPlayer => {
     const raw = p as any;
     return {
-      eaPlayerId,                          // ID numerico de EA, la clave del mapa players[clubId]
-      playerName: p.playername,
-      team,
+      eaId,
+      name: p.playername,
       position: (p.pos as PlayerPosition) ?? 'midfielder',
       origin: 'ea',
 
@@ -100,4 +117,38 @@ function mapPlayers(
       reflexSaves: Number(raw.reflexSaves ?? 0),
     };
   });
+}
+
+function buildMatchTeamData(match: IClubMatches, clubId: string, isDnf: boolean): IMatchTeamData {
+  const goalsFromAggregate = Number(match.aggregate?.[clubId]?.goals ?? 0);
+  const goalsFromClub = Number(match.clubs[clubId]?.goals ?? 0);
+
+  const score = isDnf ? goalsFromAggregate : goalsFromClub;
+  const penalties = detectPenalties(match, clubId);
+
+  return {
+    score,
+    penaltiesScore: penalties.hasPenalties ? penalties.penaltiesScore : undefined,
+    stats: parseTeamStats(match.aggregate?.[clubId]),
+    players: parseTeamPlayers(match.players?.[clubId]),
+  };
+}
+
+function toCandidateMatch(match: IClubMatches, ourClubId: string): IEaCandidateMatch {
+  const clubIds = Object.keys(match.clubs);
+  const opponentClubId = clubIds.find((id) => id !== ourClubId) ?? clubIds[1];
+
+  const winnerByDnf = detectDnf(match, clubIds);
+  const penaltiesOur = detectPenalties(match, ourClubId);
+  const penaltiesOpp = detectPenalties(match, opponentClubId);
+  const winnerByPen = penaltiesOur.hasPenalties || penaltiesOpp.hasPenalties;
+
+  return {
+    eaMatchId: match.matchId,
+    playedAt: new Date(match.timestamp * 1000).toISOString(),
+    winnerByDnf,
+    winnerByPen,
+    teamA: buildMatchTeamData(match, ourClubId, winnerByDnf),
+    teamB: buildMatchTeamData(match, opponentClubId, winnerByDnf),
+  };
 }

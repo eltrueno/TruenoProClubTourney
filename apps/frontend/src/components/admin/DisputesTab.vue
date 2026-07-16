@@ -7,7 +7,7 @@ const { data: disputes, loading, error, execute: load } = useApi(api.listDispute
 const { execute: resolve } = useApi(api.resolveDispute);
 onMounted(load);
 
-const scores = ref<Record<string, { a: number; b: number }>>({});
+const scores = ref<Record<string, { a: number; b: number; penA: number | null; penB: number | null }>>({});
 
 function key(seriesId: string, position: number) { return `${seriesId}-${position}`; }
 
@@ -15,7 +15,10 @@ async function submitResolve(seriesId: string, position: number) {
   const k = key(seriesId, position);
   const s = scores.value[k];
   if (!s) return;
-  await resolve(seriesId, position, { scoreA: s.a, scoreB: s.b });
+  await resolve(seriesId, position, {
+    teamA: { score: s.a, penaltiesScore: s.penA },
+    teamB: { score: s.b, penaltiesScore: s.penB }
+  });
   await load();
 }
 </script>
@@ -33,24 +36,38 @@ async function submitResolve(seriesId: string, position: number) {
         <div class="grid sm:grid-cols-2 gap-2 text-xs mb-3">
           <div class="bg-base-200 rounded p-2">
             <p class="opacity-50">Reportó {{ d.teamA?.name }}</p>
-            <p v-if="d.claims?.byTeamA" class="font-bold">{{ d.claims.byTeamA.scoreA }} – {{ d.claims.byTeamA.scoreB }}</p>
+            <div v-if="d.claims?.byTeamA" class="font-bold">
+              {{ d.claims.byTeamA.teamA.score }}<span v-if="d.claims.byTeamA.teamA.penaltiesScore != null"> ({{ d.claims.byTeamA.teamA.penaltiesScore }})</span>
+              – 
+              {{ d.claims.byTeamA.teamB.score }}<span v-if="d.claims.byTeamA.teamB.penaltiesScore != null"> ({{ d.claims.byTeamA.teamB.penaltiesScore }})</span>
+            </div>
             <p v-else class="opacity-40">Sin reportar</p>
           </div>
           <div class="bg-base-200 rounded p-2">
             <p class="opacity-50">Reportó {{ d.teamB?.name }}</p>
-            <p v-if="d.claims?.byTeamB" class="font-bold">{{ d.claims.byTeamB.scoreA }} – {{ d.claims.byTeamB.scoreB }}</p>
+            <div v-if="d.claims?.byTeamB" class="font-bold">
+              {{ d.claims.byTeamB.teamA.score }}<span v-if="d.claims.byTeamB.teamA.penaltiesScore != null"> ({{ d.claims.byTeamB.teamA.penaltiesScore }})</span>
+              – 
+              {{ d.claims.byTeamB.teamB.score }}<span v-if="d.claims.byTeamB.teamB.penaltiesScore != null"> ({{ d.claims.byTeamB.teamB.penaltiesScore }})</span>
+            </div>
             <p v-else class="opacity-40">Sin reportar</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-col gap-2">
           <span class="text-xs opacity-50">Marcador definitivo:</span>
-          <input type="number" min="0" class="input input-bordered input-xs w-14"
-            @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0 }), a: Number(($event.target as HTMLInputElement).value) }" />
-          <span>–</span>
-          <input type="number" min="0" class="input input-bordered input-xs w-14"
-            @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0 }), b: Number(($event.target as HTMLInputElement).value) }" />
-          <button class="btn btn-xs btn-primary" @click="submitResolve(d.seriesId, d.position)">Fijar resultado</button>
+          <div class="flex items-center gap-2">
+            <input type="number" min="0" class="input input-bordered input-xs w-12" placeholder="Goles A"
+              @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0, penA: null, penB: null }), a: Number(($event.target as HTMLInputElement).value) }" />
+            <input type="number" min="0" class="input input-bordered input-xs w-12" placeholder="Pen A"
+              @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0, penA: null, penB: null }), penA: ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null }" />
+            <span>–</span>
+            <input type="number" min="0" class="input input-bordered input-xs w-12" placeholder="Goles B"
+              @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0, penA: null, penB: null }), b: Number(($event.target as HTMLInputElement).value) }" />
+            <input type="number" min="0" class="input input-bordered input-xs w-12" placeholder="Pen B"
+              @input="scores[key(d.seriesId, d.position)] = { ...(scores[key(d.seriesId, d.position)] ?? { a: 0, b: 0, penA: null, penB: null }), penB: ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : null }" />
+            <button class="btn btn-xs btn-primary ml-2" @click="submitResolve(d.seriesId, d.position)">Fijar resultado</button>
+          </div>
         </div>
       </div>
     </div>

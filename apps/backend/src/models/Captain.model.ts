@@ -1,8 +1,8 @@
-import { Schema, model, type Types } from 'mongoose';
+import { Schema, model, type Types, type Document } from 'mongoose';
 
-export interface ICaptainDoc {
-  _id: Types.ObjectId;
-  userId: string;
+import type { ICaptain } from '@trueno-proclub-tourney/shared';
+
+export interface ICaptainDoc extends Omit<ICaptain, 'id' | 'teamId' | 'createdAt'>, Document {
   teamId: Types.ObjectId;
   createdAt: Date;
 }

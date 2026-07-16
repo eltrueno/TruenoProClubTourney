@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import type { ISeries, ITeam } from '@trueno-pro-club-tourney/shared';
+import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 
 const series = ref<ISeries[]>([]);

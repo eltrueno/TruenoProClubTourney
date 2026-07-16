@@ -13,15 +13,15 @@ export async function listDisputes(_req: Request, res: Response) {
 }
 
 export async function resolveDispute(req: Request, res: Response) {
-  const { scoreA, scoreB, playerStats } = req.body ?? {};
-  if (scoreA == null || scoreB == null) {
-    return apiError(res, 400, 'BAD_REQUEST', 'Faltan scoreA o scoreB');
+  const { teamA, teamB } = req.body ?? {};
+  if (!teamA || !teamB) {
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan teamA o teamB');
   }
   const series = await seriesService.resolveDispute(
     req.params.id,
     Number(req.params.position),
     req.user!.id,
-    { scoreA, scoreB, playerStats: playerStats ?? [] }
+    { teamA, teamB }
   );
   if (series.status === 'completed') {
     await bracketService.propagateWinner(series.id);

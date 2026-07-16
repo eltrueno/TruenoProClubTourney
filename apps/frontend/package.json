@@ -1,5 +1,5 @@
 {
-  "name": "@trueno-pro-club-tourney/frontend",
+  "name": "@trueno-proclub-tourney/frontend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@trueno-pro-club-tourney/shared": "workspace:*",
-    "@trueno-proclub-services/auth": "workspace:*",
+    "@trueno-proclub-tourney/shared": "workspace:*",
+    "@trueno-proclub-tourney/auth": "workspace:*",
     "better-auth": "latest",
     "astro": "^7.0.7",
     "@astrojs/vue": "^7.0.1",

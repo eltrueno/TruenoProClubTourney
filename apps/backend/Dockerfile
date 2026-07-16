@@ -18,7 +18,7 @@ COPY packages/auth/package.json packages/auth/package.json
 COPY packages/eafcapi/package.json packages/eafcapi/package.json
 COPY apps/backend/package.json apps/backend/package.json
 
-RUN pnpm install --frozen-lockfile --filter @trueno-pro-club-tourney/backend...
+RUN pnpm install --frozen-lockfile --filter @trueno-proclub-tourney/backend...
 
 # ---- build ----
 FROM base AS build
@@ -36,7 +36,7 @@ COPY apps/backend apps/backend
 RUN pnpm -r build
 
 # Genera una versión autocontenida para producción
-RUN pnpm deploy --legacy --filter @trueno-pro-club-tourney/backend --prod /deploy
+RUN pnpm deploy --legacy --filter @trueno-proclub-tourney/backend --prod /deploy
 
 # ---- runtime ----
 FROM node:24-bookworm-slim AS runtime

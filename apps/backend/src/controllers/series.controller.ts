@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+﻿import type { Request, Response } from 'express';
 import * as seriesService from '../services/series.service.js';
 import * as bracketService from '../services/bracket.service.js';
 import * as eaService from '../services/ea.service.js';
@@ -75,9 +75,9 @@ export async function confirm(req: Request, res: Response) {
 }
 
 export async function edit(req: Request, res: Response) {
-  const { scoreA, scoreB, playerStats, changeDescription } = req.body ?? {};
-  if (scoreA == null || scoreB == null || !changeDescription) {
-    return apiError(res, 400, 'BAD_REQUEST', 'Faltan scoreA, scoreB o changeDescription');
+  const { teamA, teamB, changeDescription } = req.body ?? {};
+  if (!teamA || !teamB || !changeDescription) {
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan teamA, teamB o changeDescription');
   }
 
   try {
@@ -85,7 +85,7 @@ export async function edit(req: Request, res: Response) {
       req.params.id,
       Number(req.params.position),
       req.user!.id,
-      { scoreA, scoreB, playerStats: playerStats ?? [] },
+      { teamA, teamB },
       changeDescription
     );
     res.json(series);

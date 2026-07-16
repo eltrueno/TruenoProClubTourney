@@ -1,4 +1,4 @@
-import type { IGroupsStageConfig, IGroupStanding, TiebreakCriterion } from '@trueno-pro-club-tourney/shared';
+import type { IGroupsStageConfig, IGroupStanding, TiebreakCriterion } from '@trueno-proclub-tourney/shared';
 import { SeriesModel } from '../models/Series.model.js';
 
 /**
@@ -31,8 +31,8 @@ export async function computeGroupStandings(
     if (!series.teamA || !series.teamB || !series.group) continue;
 
     const confirmed = series.matches.filter((m) => m.status === 'confirmed');
-    const goalsA = confirmed.reduce((sum, m) => sum + (m.effective.scoreA ?? 0), 0);
-    const goalsB = confirmed.reduce((sum, m) => sum + (m.effective.scoreB ?? 0), 0);
+    const goalsA = confirmed.reduce((sum, m) => sum + (m.effective.teamA?.score ?? 0), 0);
+    const goalsB = confirmed.reduce((sum, m) => sum + (m.effective.teamB?.score ?? 0), 0);
 
     const idA = series.teamA.toString();
     const idB = series.teamB.toString();

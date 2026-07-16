@@ -1,4 +1,4 @@
-import type { ITournamentConfig } from '@trueno-pro-club-tourney/shared';
+import type { ITournamentConfig } from '@trueno-proclub-tourney/shared';
 
 /**
  * PLANTILLA DE EJEMPLO — 2 grupos de 4 equipos + semis/final, para que se

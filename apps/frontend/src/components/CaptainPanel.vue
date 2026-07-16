@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import type { ISeries, IEaCandidateMatch } from '@trueno-pro-club-tourney/shared';
+import type { ISeries, IEaCandidateMatch } from '@trueno-proclub-tourney/shared';
 import { api, ApiError } from '../lib/api';
 import { useAuth } from '@/composables/useAuth';
 
@@ -19,10 +19,10 @@ const candidates = ref<IEaCandidateMatch[]>([]);
 const candidatesLoading = ref(false);
 
 // Modal "Algo no cuadra"
-const editingSlot = ref<{ seriesId: string; position: number; scoreA: number; scoreB: number } | null>(null);
+const editingSlot = ref<{ seriesId: string; position: number; scoreA: number; scoreB: number; penA: number | null; penB: number | null } | null>(null);
 const editDescription = ref('');
 
-const myTeam = ref<import('@trueno-pro-club-tourney/shared').ITeam | null>(null);
+const myTeam = ref<import('@trueno-proclub-tourney/shared').ITeam | null>(null);
 const eaClubIdInput = ref('');
 const savingEaClubId = ref(false);
 const eaClubIdError = ref('');
@@ -106,18 +106,28 @@ async function confirm(seriesId: string, position: number) {
   }
 }
 
-function openEditModal(seriesId: string, position: number, scoreA: number, scoreB: number) {
-  editingSlot.value = { seriesId, position, scoreA, scoreB };
+function openEditModal(seriesId: string, position: number, match: any) {
+  editingSlot.value = {
+    seriesId, position,
+    scoreA: match.effective.teamA?.score ?? 0,
+    scoreB: match.effective.teamB?.score ?? 0,
+    penA: match.effective.teamA?.penaltiesScore ?? null,
+    penB: match.effective.teamB?.penaltiesScore ?? null,
+  };
   editDescription.value = '';
 }
 
 async function submitEdit() {
   if (!editingSlot.value || !editDescription.value.trim()) return;
-  const { seriesId, position, scoreA, scoreB } = editingSlot.value;
+  const { seriesId, position, scoreA, scoreB, penA, penB } = editingSlot.value;
   const key = slotKey(seriesId, position);
   slotError.value[key] = '';
   try {
-    const updated = await api.editMatch(seriesId, position, { scoreA, scoreB, changeDescription: editDescription.value });
+    const updated = await api.editMatch(seriesId, position, {
+      teamA: { score: scoreA, penaltiesScore: penA, stats: { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 }, players: [] },
+      teamB: { score: scoreB, penaltiesScore: penB, stats: { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 }, players: [] },
+      changeDescription: editDescription.value,
+    });
     series.value = series.value.map((s) => s.id === seriesId ? updated : s);
     editingSlot.value = null;
   } catch (e) {
@@ -126,17 +136,24 @@ async function submitEdit() {
 }
 
 const statusLabel: Record<string, string> = {
-  sin_seleccionar: 'Sin seleccionar',
-  pendiente_confirmacion: 'Pendiente',
-  confirmado: 'Confirmado',
-  disputado: 'En disputa',
+  unselected: 'Sin seleccionar',
+  pending_confirmation: 'Pendiente',
+  confirmed: 'Confirmado',
+  disputed: 'En disputa',
 };
 const statusBadge: Record<string, string> = {
-  sin_seleccionar: 'badge-ghost',
-  pendiente_confirmacion: 'badge-warning',
-  confirmado: 'badge-success',
-  disputado: 'badge-error',
+  unselected: 'badge-ghost',
+  pending_confirmation: 'badge-warning',
+  confirmed: 'badge-success',
+  disputed: 'badge-error',
 };
+
+function formatMatchScore(teamData: any) {
+  if (!teamData || teamData.score == null) return '?';
+  let r = teamData.score.toString();
+  if (teamData.penaltiesScore != null) r += ` (${teamData.penaltiesScore})`;
+  return r;
+}
 </script>
 
 <template>
@@ -200,8 +217,8 @@ const statusBadge: Record<string, string> = {
                   </div>
 
                   <!-- Marcador actual -->
-                  <div v-if="match.effective.scoreA != null" class="text-2xl font-bold tabular-nums">
-                    {{ match.effective.scoreA }} – {{ match.effective.scoreB }}
+                  <div v-if="match.effective.teamA?.score != null" class="text-2xl font-bold tabular-nums">
+                    {{ formatMatchScore(match.effective.teamA) }} – {{ formatMatchScore(match.effective.teamB) }}
                   </div>
                   <div v-else-if="match.status === 'unselected'" class="text-sm opacity-40">
                     Sin partido asignado
@@ -251,7 +268,7 @@ const statusBadge: Record<string, string> = {
                     </button>
                     <button
                       class="btn btn-sm btn-outline btn-warning"
-                      @click="openEditModal(s.id, match.position, match.effective.scoreA ?? 0, match.effective.scoreB ?? 0)"
+                      @click="openEditModal(s.id, match.position, match)"
                     >
                       Algo no cuadra
                     </button>
@@ -281,7 +298,7 @@ const statusBadge: Record<string, string> = {
             class="btn btn-outline btn-sm w-full justify-between"
             @click="selectCandidate(c)"
           >
-            <span class="tabular-nums">{{ c.scoreA }} – {{ c.scoreB }}</span>
+            <span class="tabular-nums">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</span>
             <span class="text-xs opacity-60">{{ new Date(c.playedAt).toLocaleDateString('es') }}</span>
           </button>
         </div>

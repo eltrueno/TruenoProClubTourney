@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import type { ISeries, ITeam, IMatchPlayerStat } from '@trueno-pro-club-tourney/shared';
+import type { ISeries, ITeam, IMatchPlayer } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 
 const series = ref<ISeries | null>(null);
@@ -32,33 +32,38 @@ function badge(id: string | null) {
 }
 const totalScore = computed(() => {
   if (!series.value) return null;
-  const confirmed = series.value.matches.filter((m) => m.status === 'confirmado');
+  const confirmed = series.value.matches.filter((m) => m.status === 'confirmed');
   if (!confirmed.length) return null;
   return {
-    A: confirmed.reduce((acc, m) => acc + (m.effective.scoreA ?? 0), 0),
-    B: confirmed.reduce((acc, m) => acc + (m.effective.scoreB ?? 0), 0),
+    A: confirmed.reduce((acc, m) => acc + (m.effective.teamA?.score ?? 0), 0),
+    B: confirmed.reduce((acc, m) => acc + (m.effective.teamB?.score ?? 0), 0),
   };
 });
 
 const statusBadge: Record<string, string> = {
-  sin_seleccionar: 'badge-ghost',
-  pendiente_confirmacion: 'badge-warning',
-  confirmado: 'badge-success',
-  disputado: 'badge-error',
+  unselected: 'badge-ghost',
+  pending_confirmation: 'badge-warning',
+  confirmed: 'badge-success',
+  disputed: 'badge-error',
 };
 
 const posOrder: Record<string, number> = { goalkeeper: 0, defender: 1, midfielder: 2, forward: 3 };
 const posLabel: Record<string, string> = { goalkeeper: 'PO', defender: 'DEF', midfielder: 'MED', forward: 'DEL' };
 
-function sortedPlayers(stats: IMatchPlayerStat[], team: 'A' | 'B') {
-  return [...stats.filter(p => p.team === team)].sort(
+function sortedPlayers(stats: IMatchPlayer[] | undefined) {
+  if (!stats) return [];
+  return [...stats].sort(
     (a, b) => (posOrder[a.position] ?? 9) - (posOrder[b.position] ?? 9)
   );
 }
 
-function pct(made: number, attempts: number) {
-  if (!attempts) return '—';
-  return `${Math.round((made / attempts) * 100)}%`;
+function formatScore(teamData: any) {
+  if (!teamData || teamData.score == null) return '';
+  let res = teamData.score.toString();
+  if (teamData.penaltiesScore != null) {
+    res += ` (${teamData.penaltiesScore})`;
+  }
+  return res;
 }
 </script>
 
@@ -101,13 +106,14 @@ function pct(made: number, attempts: number) {
       <div class="flex items-center gap-3">
         <h2 class="font-bold text-lg">Partida {{ match.position }}</h2>
         <span class="badge badge-sm" :class="statusBadge[match.status]">{{ match.status.replace(/_/g, ' ') }}</span>
-        <span v-if="match.effective.scoreA != null" class="font-black text-xl tabular-nums ml-auto">
-          {{ match.effective.scoreA }} – {{ match.effective.scoreB }}
+        <span v-if="match.effective?.teamA?.score != null" class="font-black text-xl tabular-nums ml-auto text-right">
+          {{ formatScore(match.effective.teamA) }} – {{ formatScore(match.effective.teamB) }}
+          <div v-if="match.winnerByDnf" class="text-xs opacity-50 font-normal uppercase">Victoria por DNF</div>
         </span>
       </div>
 
       <!-- Stats de jugadores (solo si hay) -->
-      <div v-if="match.effective.playerStats?.length" class="grid md:grid-cols-2 gap-4">
+      <div v-if="match.effective.teamA?.players?.length || match.effective.teamB?.players?.length" class="grid md:grid-cols-2 gap-4">
         <!-- Equipo A -->
         <div class="card bg-base-100 shadow-sm">
           <div class="card-body p-3">
@@ -125,11 +131,11 @@ function pct(made: number, attempts: number) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="p in sortedPlayers(match.effective.playerStats, 'A')" :key="p.eaPlayerId"
+                  <tr v-for="p in sortedPlayers(match.effective.teamA?.players)" :key="p.eaId"
                     :class="{ 'font-bold text-warning': p.manOfTheMatch }">
                     <td class="max-w-[120px]">
                       <span class="badge badge-xs badge-ghost mr-1">{{ posLabel[p.position] ?? p.position }}</span>
-                      <span class="truncate">{{ p.playerName }}</span>
+                      <span class="truncate">{{ p.name }}</span>
                       <span v-if="p.manOfTheMatch" class="ml-1 text-warning text-xs">★</span>
                     </td>
                     <td class="text-center font-bold">{{ p.goals || '—' }}</td>
@@ -144,8 +150,8 @@ function pct(made: number, attempts: number) {
                     </td>
                   </tr>
                   <!-- Portero con stats específicas -->
-                  <tr v-for="p in sortedPlayers(match.effective.playerStats, 'A').filter(p => p.position === 'goalkeeper')"
-                    :key="`gk-${p.eaPlayerId}`" class="opacity-60 text-xs">
+                  <tr v-for="p in sortedPlayers(match.effective.teamA?.players).filter(p => p.position === 'goalkeeper')"
+                    :key="`gk-${p.eaId}`" class="opacity-60 text-xs">
                     <td colspan="6" class="pl-6">
                       Paradas: {{ p.saves }} ({{ p.goodDirectionSaves }} buen ángulo{{ p.crossSaves ? `, ${p.crossSaves} centro` : '' }})
                     </td>
@@ -173,11 +179,11 @@ function pct(made: number, attempts: number) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="p in sortedPlayers(match.effective.playerStats, 'B')" :key="p.eaPlayerId"
+                  <tr v-for="p in sortedPlayers(match.effective.teamB?.players)" :key="p.eaId"
                     :class="{ 'font-bold text-warning': p.manOfTheMatch }">
                     <td class="max-w-[120px]">
                       <span class="badge badge-xs badge-ghost mr-1">{{ posLabel[p.position] ?? p.position }}</span>
-                      <span class="truncate">{{ p.playerName }}</span>
+                      <span class="truncate">{{ p.name }}</span>
                       <span v-if="p.manOfTheMatch" class="ml-1 text-warning text-xs">★</span>
                     </td>
                     <td class="text-center font-bold">{{ p.goals || '—' }}</td>
@@ -191,8 +197,8 @@ function pct(made: number, attempts: number) {
                       </span>
                     </td>
                   </tr>
-                  <tr v-for="p in sortedPlayers(match.effective.playerStats, 'B').filter(p => p.position === 'goalkeeper')"
-                    :key="`gk-${p.eaPlayerId}`" class="opacity-60 text-xs">
+                  <tr v-for="p in sortedPlayers(match.effective.teamB?.players).filter(p => p.position === 'goalkeeper')"
+                    :key="`gk-${p.eaId}`" class="opacity-60 text-xs">
                     <td colspan="6" class="pl-6">
                       Paradas: {{ p.saves }} ({{ p.goodDirectionSaves }} buen ángulo{{ p.crossSaves ? `, ${p.crossSaves} centro` : '' }})
                     </td>

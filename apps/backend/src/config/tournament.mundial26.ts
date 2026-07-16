@@ -1,4 +1,4 @@
-import type { ITournamentConfig } from '@trueno-pro-club-tourney/shared';
+import type { ITournamentConfig } from '@trueno-proclub-tourney/shared';
 
 /**
  * Mundial 2026 (12 grupos de 4, 48 equipos, USA/México/Canadá).

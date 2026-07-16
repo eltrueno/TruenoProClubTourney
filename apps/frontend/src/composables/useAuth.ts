@@ -22,7 +22,7 @@ export function useAuth() {
     try {
       const { data } = await authClient.signIn.social({
         provider: 'twitch',
-        callbackURL: window.location.href,
+        callbackURL: `${window.location.origin}/authcallback`,
         disableRedirect: true,
       });
 
@@ -41,12 +41,13 @@ export function useAuth() {
       window.addEventListener(
         'message',
         async (e) => {
+          if (e.origin !== window.location.origin) return;
           if (e.data === 'auth-success') {
-            await authClient.$fetch('/get-session');
+            await authClient.getSession({ fetchOptions: { force: true } });
+            isLoggingIn.value = false;
             if (callbackURL) window.location.href = callbackURL;
             else window.location.reload();
           }
-          isLoggingIn.value = false;
         },
         { once: true }
       );

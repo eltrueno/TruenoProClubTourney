@@ -1,4 +1,4 @@
-import type { ITeam, ITeamCreateInput } from '@trueno-pro-club-tourney/shared';
+import type { ITeam, ITeamCreateInput } from '@trueno-proclub-tourney/shared';
 import { TeamModel, type ITeamDoc } from '../models/Team.model.js';
 import { CaptainModel } from '../models/Captain.model.js';
 

@@ -41,7 +41,7 @@ jobs:
         # descargar Chrome desde Google, lo cual falla con 403 en varios
         # runners de GitHub Actions y tira todo el deploy sin necesidad,
         # ya que el frontend no lo usa para nada.
-        run: pnpm install --frozen-lockfile --filter @trueno-pro-club-tourney/frontend...
+        run: pnpm install --frozen-lockfile --filter @trueno-proclub-tourney/frontend...
 
       - name: Comprobar variables
         run: |
@@ -52,7 +52,7 @@ jobs:
           PUBLIC_ROOT_AUTH_URL: ${{ vars.PUBLIC_ROOT_AUTH_URL }}
 
       - name: Build del frontend
-        run: pnpm --filter @trueno-pro-club-tourney/frontend build
+        run: pnpm --filter @trueno-proclub-tourney/frontend build
         env:
           PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
           PUBLIC_ROOT_AUTH_URL: ${{ vars.PUBLIC_ROOT_AUTH_URL }}

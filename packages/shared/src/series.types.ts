@@ -10,15 +10,24 @@ export type SeriesStatus = 'pending' | 'in_progress' | 'completed';
 export type StageType = 'groups' | 'swissLeague' | 'knockout';
 export type PlayerPosition = 'goalkeeper' | 'defender' | 'midfielder' | 'forward';
 
-export interface IMatchPlayerStat {
+export interface ITeamMatchStats {
+  goals: number;
+  shots: number;
+  passesMade: number;
+  passesSuccess: number;
+  tacklesMade: number;
+  tacklesSuccess: number;
+  redCards: number;
+}
+
+export interface IMatchPlayer {
   /**
    * ID numerico interno de EA (la clave del objeto players[clubId] en la
    * respuesta de la API). Referencia estable — el nombre puede cambiar.
    */
-  eaPlayerId: string;
+  eaId: string;
   /** Gamertag tal cual llegó de EA en esa partida, solo para mostrar */
-  playerName: string;
-  team: 'A' | 'B';
+  name: string;
   position: PlayerPosition;
   origin: 'ea' | 'manual';
 
@@ -53,6 +62,13 @@ export interface IMatchPlayerStat {
   editedAt?: string;
 }
 
+export interface IMatchTeamData {
+  score: number | null;
+  penaltiesScore?: number | null;
+  stats: ITeamMatchStats;
+  players: IMatchPlayer[];
+}
+
 export interface IMatchEdit {
   by: string;
   at: string;
@@ -62,8 +78,8 @@ export interface IMatchEdit {
 export interface IMatchConfirmation {
   userId: string;
   at: string;
-  scoreA: number;
-  scoreB: number;
+  teamA: { score: number; penaltiesScore?: number };
+  teamB: { score: number; penaltiesScore?: number };
 }
 
 export interface IMatch {
@@ -71,16 +87,16 @@ export interface IMatch {
   status: MatchStatus;
   eaMatchId?: string;
   isManual: boolean;
+  winnerByDnf?: boolean;
+  winnerByPen?: boolean;
   original?: {
-    scoreA: number;
-    scoreB: number;
-    playerStats: IMatchPlayerStat[];
+    teamA: IMatchTeamData;
+    teamB: IMatchTeamData;
     fetchedAt: string;
   };
   effective: {
-    scoreA: number | null;
-    scoreB: number | null;
-    playerStats: IMatchPlayerStat[];
+    teamA: IMatchTeamData;
+    teamB: IMatchTeamData;
   };
   edits: IMatchEdit[];
   confirmations: {
@@ -110,7 +126,8 @@ export interface ISeries {
 export interface IEaCandidateMatch {
   eaMatchId: string;
   playedAt: string;
-  scoreA: number;
-  scoreB: number;
-  playerStats: IMatchPlayerStat[];
+  winnerByDnf: boolean;
+  winnerByPen: boolean;
+  teamA: IMatchTeamData;
+  teamB: IMatchTeamData;
 }

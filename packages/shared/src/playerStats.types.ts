@@ -1,4 +1,4 @@
-import type { IMatchPlayerStat } from './series.types.js';
+import type { IMatchPlayer } from './series.types.js';
 
 /**
  * Stats acumuladas de un jugador a lo largo de todo el torneo, calculadas
@@ -51,7 +51,7 @@ export interface IPlayerMatchAppearance {
   result: 'win' | 'loss' | 'draw';
   scoreA: number;
   scoreB: number;
-  stats: IMatchPlayerStat;
+  stats: IMatchPlayer;
 }
 
 export interface IPlayerProfile {

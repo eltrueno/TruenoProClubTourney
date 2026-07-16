@@ -1,82 +1,69 @@
-import { Schema, model, type Types } from 'mongoose';
-import type { MatchStatus, StageType, SeriesStatus } from '@trueno-pro-club-tourney/shared';
+import { Schema, model, type Types, type Document } from 'mongoose';
+import type { 
+  MatchStatus, StageType, SeriesStatus, 
+  ITeamMatchStats, IMatchPlayer, IMatchTeamData, IMatch, ISeries, IMatchEdit, IMatchConfirmation
+} from '@trueno-proclub-tourney/shared';
 
-export interface IMatchPlayerStatDoc {
-  eaPlayerId: string;
-  playerName: string;
-  team: 'A' | 'B';
-  position: string;
-  origin: 'ea' | 'manual';
-  rating: number;
-  secondsPlayed: number;
-  manOfTheMatch: boolean;
-  goals: number;
-  assists: number;
-  shots: number;
-  goalsConceded: number;
-  redCards: number;
-  cleanSheet: boolean;
-  passesMade: number;
-  passesSuccess: number;
-  tacklesMade: number;
-  tacklesSuccess: number;
-  saves: number;
-  goodDirectionSaves: number;
-  crossSaves: number;
-  ballDiveSaves: number;
-  parrySaves: number;
-  punchSaves: number;
-  reflexSaves: number;
-  editedBy?: string;
+export interface ITeamMatchStatsDoc extends ITeamMatchStats {}
+
+export interface IMatchPlayerDoc extends Omit<IMatchPlayer, 'editedAt'> {
   editedAt?: Date;
 }
 
-export interface IMatchDoc {
-  position: number;
-  status: MatchStatus;
-  eaMatchId?: string;
-  isManual: boolean;
+export interface IMatchTeamDataDoc extends Omit<IMatchTeamData, 'stats' | 'players'> {
+  stats: ITeamMatchStatsDoc;
+  players: IMatchPlayerDoc[];
+}
+
+export interface IMatchConfirmationDoc extends Omit<IMatchConfirmation, 'at'> {
+  at: Date;
+}
+
+export interface IMatchEditDoc extends Omit<IMatchEdit, 'at'> {
+  at: Date;
+}
+
+export interface IMatchDoc extends Omit<IMatch, 'original' | 'effective' | 'edits' | 'confirmations'> {
   original?: {
-    scoreA: number;
-    scoreB: number;
-    playerStats: IMatchPlayerStatDoc[];
+    teamA: IMatchTeamDataDoc;
+    teamB: IMatchTeamDataDoc;
     fetchedAt: Date;
   };
   effective: {
-    scoreA: number | null;
-    scoreB: number | null;
-    playerStats: IMatchPlayerStatDoc[];
+    teamA: IMatchTeamDataDoc;
+    teamB: IMatchTeamDataDoc;
   };
-  edits: { by: string; at: Date; change: string }[];
+  edits: IMatchEditDoc[];
   confirmations: {
-    byTeamA?: { userId: string; at: Date; scoreA: number; scoreB: number };
-    byTeamB?: { userId: string; at: Date; scoreA: number; scoreB: number };
+    byTeamA?: IMatchConfirmationDoc;
+    byTeamB?: IMatchConfirmationDoc;
   };
 }
 
-export interface ISeriesDoc {
-  _id: Types.ObjectId;
+export interface ISeriesDoc extends Omit<ISeries, 'id' | 'teamA' | 'teamB' | 'matches' | 'createdAt'>, Document {
   teamA: Types.ObjectId | null;
   teamB: Types.ObjectId | null;
-  sourceA?: Record<string, unknown>;
-  sourceB?: Record<string, unknown>;
-  bracketSlot?: string;
-  stageId: string;
-  stageType: StageType;
-  round: string;
-  group?: string;
-  bestOf: 1 | 3;
   matches: IMatchDoc[];
-  usedEaMatchIds: string[];
-  status: SeriesStatus;
   createdAt: Date;
 }
 
-const playerStatSchema = new Schema<IMatchPlayerStatDoc>(
+const teamMatchStatsSchema = new Schema<ITeamMatchStatsDoc>(
   {
-    eaPlayerId: { type: String, required: true },
-    playerName: { type: String, required: true },
-    team: { type: String, enum: ['A', 'B'], required: true },
+    goals: { type: Number, default: 0 },
+    shots: { type: Number, default: 0 },
+    passesMade: { type: Number, default: 0 },
+    passesSuccess: { type: Number, default: 0 },
+    tacklesMade: { type: Number, default: 0 },
+    tacklesSuccess: { type: Number, default: 0 },
+    redCards: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
+const matchPlayerSchema = new Schema<IMatchPlayerDoc>(
+  {
+    eaId: { type: String, required: true },
+    name: { type: String, required: true },
     position: { type: String, default: 'midfielder' },
     origin: { type: String, enum: ['ea', 'manual'], required: true },
     rating: { type: Number, default: 0 },
@@ -105,6 +92,16 @@ const playerStatSchema = new Schema<IMatchPlayerStatDoc>(
   { _id: false }
 );
 
+const matchTeamDataSchema = new Schema<IMatchTeamDataDoc>(
+  {
+    score: { type: Number, default: null },
+    penaltiesScore: { type: Number, default: null },
+    stats: { type: teamMatchStatsSchema, required: true },
+    players: { type: [matchPlayerSchema], default: [] },
+  },
+  { _id: false }
+);
+
 const matchSchema = new Schema<IMatchDoc>(
   {
     position: { type: Number, required: true },
@@ -115,24 +112,34 @@ const matchSchema = new Schema<IMatchDoc>(
     },
     eaMatchId: { type: String },
     isManual: { type: Boolean, default: false },
+    winnerByDnf: { type: Boolean, default: false },
+    winnerByPen: { type: Boolean, default: false },
     original: {
-      scoreA: Number,
-      scoreB: Number,
-      playerStats: { type: [playerStatSchema], default: undefined },
+      teamA: matchTeamDataSchema,
+      teamB: matchTeamDataSchema,
       fetchedAt: Date,
     },
     effective: {
-      scoreA: { type: Number, default: null },
-      scoreB: { type: Number, default: null },
-      playerStats: { type: [playerStatSchema], default: [] },
+      teamA: { type: matchTeamDataSchema, default: null },
+      teamB: { type: matchTeamDataSchema, default: null },
     },
     edits: {
       type: [{ by: String, at: Date, change: String }],
       default: [],
     },
     confirmations: {
-      byTeamA: { userId: String, at: Date, scoreA: Number, scoreB: Number },
-      byTeamB: { userId: String, at: Date, scoreA: Number, scoreB: Number },
+      byTeamA: {
+        userId: String,
+        at: Date,
+        teamA: { score: Number, penaltiesScore: Number },
+        teamB: { score: Number, penaltiesScore: Number }
+      },
+      byTeamB: {
+        userId: String,
+        at: Date,
+        teamA: { score: Number, penaltiesScore: Number },
+        teamB: { score: Number, penaltiesScore: Number }
+      },
     },
   },
   { _id: false }
