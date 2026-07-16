@@ -109,8 +109,8 @@ export interface IMatch {
 
 export interface ISeries {
   id: string;
-  teamA: string | null;
-  teamB: string | null;
+  teamA: string | import('./team.types.js').ITeam | null;
+  teamB: string | import('./team.types.js').ITeam | null;
   sourceA?: ISeriesSource;
   sourceB?: ISeriesSource;
   bracketSlot?: string;

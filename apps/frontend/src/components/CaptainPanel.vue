@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import type { ISeries, IEaCandidateMatch } from '@trueno-proclub-tourney/shared';
-import { api, ApiError } from '../lib/api';
+import { api, teamBadge, ApiError } from '@/lib/api';
 import { useAuth } from '@/composables/useAuth';
 
 const { isLoggedIn, isPending, user, loginWithTwitchPopup } = useAuth();
@@ -33,6 +33,8 @@ async function saveEaClubId() {
   eaClubIdError.value = '';
   try {
     myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
+    const modal = document.getElementById('ea_modal') as HTMLDialogElement;
+    if (modal) modal.close();
   } catch (e) {
     eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
   } finally {
@@ -184,30 +186,54 @@ function formatMatchScore(teamData: any) {
 
     <!-- Panel -->
     <div v-else class="space-y-6">
-      <!-- Aviso: falta configurar el eaClubId -->
-      <div v-if="myTeam && !myTeam.eaClubId" class="alert alert-warning">
-        <div class="flex-1">
-          <p class="font-medium">Configura el ID de club de EA de {{ myTeam.name }} antes de reportar</p>
-          <div class="flex gap-2 mt-2">
-            <input v-model="eaClubIdInput" placeholder="ID de club en EA" class="input input-bordered input-sm" />
-            <button class="btn btn-sm btn-primary" :disabled="savingEaClubId" @click="saveEaClubId">
-              {{ savingEaClubId ? 'Guardando...' : 'Guardar' }}
-            </button>
+      <!-- Cabecera de equipo -->
+      <div v-if="myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300">
+        <div class="flex items-center gap-4">
+          <div class="avatar">
+            <div class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm">
+              <span v-if="!teamBadge(myTeam)">{{ myTeam.name.charAt(0) }}</span>
+              <img v-else :src="teamBadge(myTeam)!" class="object-contain" />
+            </div>
           </div>
-          <p v-if="eaClubIdError" class="text-error text-xs mt-1">{{ eaClubIdError }}</p>
+          <div>
+            <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>
+            <p class="text-xs opacity-60">Capitán: {{ user?.displayName }}</p>
+          </div>
+        </div>
+        
+        <!-- Configuración de EA Club ID -->
+        <div class="flex items-center gap-2">
+          <div v-if="myTeam.eaClubId" class="text-right">
+            <div class="text-xs opacity-60 mb-1">EA Club ID configurado</div>
+            <div class="font-mono text-sm font-bold bg-base-300 px-2 py-1 rounded">{{ myTeam.eaClubId }}</div>
+          </div>
+          <div v-else class="text-right text-warning">
+            <div class="text-xs font-bold mb-1">¡Falta EA Club ID!</div>
+            <div class="text-xs">No podrás reportar partidos</div>
+          </div>
+          <button class="btn btn-sm btn-outline ml-2" onclick="document.getElementById('ea_modal').showModal()">
+            Cambiar ID
+          </button>
         </div>
       </div>
 
       <div v-for="s in series" :key="s.id" class="card bg-base-100 shadow">
         <div class="card-body">
           <!-- Cabecera de la serie -->
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-lg">{{ s.round }}</h3>
+          <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="font-bold text-lg flex items-center gap-2">
+                <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
+                <span class="opacity-30 text-sm font-normal">vs</span>
+                <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
+              </div>
+              <span class="badge badge-sm badge-ghost">{{ s.round }}</span>
+            </div>
             <span class="text-sm opacity-50">{{ s.stageType === 'groups' ? `Grupo ${s.group}` : s.stageType }}</span>
           </div>
 
           <!-- Matches -->
-          <div class="divide-y">
+          <div class="divide-y border-t">
             <div v-for="match in s.matches" :key="match.position" class="py-3">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
@@ -365,7 +391,26 @@ function formatMatchScore(teamData: any) {
           <button class="btn btn-warning btn-sm" :disabled="!editDescription.trim()" @click="submitEdit">Guardar</button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="editingSlot = null"></div>
+      <div class="modal-backdrop" @click="addingSlot = null"></div>
+    </dialog>
+
+    <!-- Modal: Cambiar EA ID -->
+    <dialog id="ea_modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Configurar EA Club ID</h3>
+        <p class="py-4 text-sm opacity-80">Introduce el ID numérico de tu club en EA FC. Es necesario para que el sistema busque los partidos automáticamente.</p>
+        <input v-model="eaClubIdInput" placeholder="Ej: 1234567" class="input input-bordered w-full mb-2" />
+        <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-ghost mr-2">Cancelar</button>
+            <button class="btn btn-primary" :disabled="savingEaClubId" @click.prevent="saveEaClubId()">
+              {{ savingEaClubId ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
   </div>
 </template>

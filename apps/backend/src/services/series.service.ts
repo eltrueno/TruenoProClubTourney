@@ -57,8 +57,8 @@ function toMatchTeamDataDoc(data: IMatchTeamData, origin: 'ea' | 'manual' = 'ea'
 function toISeries(doc: ISeriesDoc): ISeries {
   return {
     id: doc._id.toString(),
-    teamA: doc.teamA ? doc.teamA.toString() : null,
-    teamB: doc.teamB ? doc.teamB.toString() : null,
+    teamA: doc.teamA ? (doc.populated('teamA') ? (doc.teamA as any) : doc.teamA.toString()) : null,
+    teamB: doc.teamB ? (doc.populated('teamB') ? (doc.teamB as any) : doc.teamB.toString()) : null,
     sourceA: doc.sourceA as ISeries['sourceA'],
     sourceB: doc.sourceB as ISeries['sourceB'],
     bracketSlot: doc.bracketSlot,
@@ -87,7 +87,9 @@ export async function listSeriesForCaptain(userId: string): Promise<import('@tru
   const docs = await SeriesModel.find({
     $or: [{ teamA: teamId }, { teamB: teamId }],
     status: { $ne: 'completed' },
-  }).sort({ round: 1, createdAt: 1 });
+  })
+    .sort({ round: 1, createdAt: 1 })
+    .populate('teamA teamB');
 
   return docs.map((doc) => {
     const s = toISeries(doc);
@@ -143,15 +145,7 @@ async function resolveSide(
   throw new ServiceError('FORBIDDEN', 'No eres capitan de ninguno de los dos equipos de esta serie');
 }
 
-/** La candidata de EA llega con A=club solicitante. Esto la voltea si ese
- *  capitan resulta ser teamB en la Series real. */
-function flipCandidateSides(candidate: IEaCandidateMatch): IEaCandidateMatch {
-  return {
-    ...candidate,
-    teamA: candidate.teamB,
-    teamB: candidate.teamA,
-  };
-}
+
 
 export class ServiceError extends Error {
   code: string;
@@ -174,10 +168,10 @@ export async function selectCandidateForMatch(
   requesterUserId: string,
   candidate: IEaCandidateMatch
 ): Promise<ISeries> {
-  const series = await SeriesModel.findById(seriesId);
+  const series = await SeriesModel.findById(seriesId).populate<{ teamA: any; teamB: any }>('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
-  const side = await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
+  await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
 
   if (series.usedEaMatchIds.includes(candidate.eaMatchId)) {
     throw new ServiceError('ALREADY_USED', 'Esa partida de EA ya se ha usado en otro slot');
@@ -188,23 +182,34 @@ export async function selectCandidateForMatch(
     throw new ServiceError('ALREADY_SET', 'Este slot ya tiene una partida asignada');
   }
 
-  // La candidata de EA siempre viene con team='A' para el club que la pidio.
-  // Si ese capitan es en realidad teamB de la Series, hay que voltear
-  // marcador y team de cada jugador antes de guardar.
-  const normalized = side === 'A' ? candidate : flipCandidateSides(candidate);
+  const eaTeamA = series.teamA?.eaClubId;
+  const eaTeamB = series.teamB?.eaClubId;
 
-  match.eaMatchId = normalized.eaMatchId;
+  let finalTeamA = candidate.teamA;
+  let finalTeamB = candidate.teamB;
+
+  if (candidate.teamA.eaClubId === eaTeamA && candidate.teamB.eaClubId === eaTeamB) {
+    // Orden correcto
+  } else if (candidate.teamA.eaClubId === eaTeamB && candidate.teamB.eaClubId === eaTeamA) {
+    // Voltear
+    finalTeamA = candidate.teamB;
+    finalTeamB = candidate.teamA;
+  } else {
+    throw new ServiceError('INVALID_OPPONENT', 'El partido de EA no se jugó contra el rival asignado en esta serie.');
+  }
+
+  match.eaMatchId = candidate.eaMatchId;
   match.isManual = false;
-  match.winnerByDnf = normalized.winnerByDnf;
-  match.winnerByPen = normalized.winnerByPen;
+  match.winnerByDnf = candidate.winnerByDnf;
+  match.winnerByPen = candidate.winnerByPen;
   match.original = {
-    teamA: toMatchTeamDataDoc(normalized.teamA),
-    teamB: toMatchTeamDataDoc(normalized.teamB),
+    teamA: toMatchTeamDataDoc(finalTeamA),
+    teamB: toMatchTeamDataDoc(finalTeamB),
     fetchedAt: new Date(),
   };
   match.effective = {
-    teamA: toMatchTeamDataDoc(normalized.teamA),
-    teamB: toMatchTeamDataDoc(normalized.teamB),
+    teamA: toMatchTeamDataDoc(finalTeamA),
+    teamB: toMatchTeamDataDoc(finalTeamB),
   };
   match.status = 'pending_confirmation';
   series.usedEaMatchIds.push(candidate.eaMatchId);

@@ -36,19 +36,19 @@ async function submitResolve(seriesId: string, position: number) {
         <div class="grid sm:grid-cols-2 gap-2 text-xs mb-3">
           <div class="bg-base-200 rounded p-2">
             <p class="opacity-50">Reportó {{ d.teamA?.name }}</p>
-            <div v-if="d.claims?.byTeamA" class="font-bold">
-              {{ d.claims.byTeamA.teamA.score }}<span v-if="d.claims.byTeamA.teamA.penaltiesScore != null"> ({{ d.claims.byTeamA.teamA.penaltiesScore }})</span>
+            <div v-if="d.confirmations?.byTeamA" class="font-bold">
+              {{ d.confirmations.byTeamA.teamA.score }}<span v-if="d.confirmations.byTeamA.teamA.penaltiesScore != null"> ({{ d.confirmations.byTeamA.teamA.penaltiesScore }})</span>
               – 
-              {{ d.claims.byTeamA.teamB.score }}<span v-if="d.claims.byTeamA.teamB.penaltiesScore != null"> ({{ d.claims.byTeamA.teamB.penaltiesScore }})</span>
+              {{ d.confirmations.byTeamA.teamB.score }}<span v-if="d.confirmations.byTeamA.teamB.penaltiesScore != null"> ({{ d.confirmations.byTeamA.teamB.penaltiesScore }})</span>
             </div>
             <p v-else class="opacity-40">Sin reportar</p>
           </div>
           <div class="bg-base-200 rounded p-2">
             <p class="opacity-50">Reportó {{ d.teamB?.name }}</p>
-            <div v-if="d.claims?.byTeamB" class="font-bold">
-              {{ d.claims.byTeamB.teamA.score }}<span v-if="d.claims.byTeamB.teamA.penaltiesScore != null"> ({{ d.claims.byTeamB.teamA.penaltiesScore }})</span>
+            <div v-if="d.confirmations?.byTeamB" class="font-bold">
+              {{ d.confirmations.byTeamB.teamA.score }}<span v-if="d.confirmations.byTeamB.teamA.penaltiesScore != null"> ({{ d.confirmations.byTeamB.teamA.penaltiesScore }})</span>
               – 
-              {{ d.claims.byTeamB.teamB.score }}<span v-if="d.claims.byTeamB.teamB.penaltiesScore != null"> ({{ d.claims.byTeamB.teamB.penaltiesScore }})</span>
+              {{ d.confirmations.byTeamB.teamB.score }}<span v-if="d.confirmations.byTeamB.teamB.penaltiesScore != null"> ({{ d.confirmations.byTeamB.teamB.penaltiesScore }})</span>
             </div>
             <p v-else class="opacity-40">Sin reportar</p>
           </div>
