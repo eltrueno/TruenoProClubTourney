@@ -198,9 +198,14 @@ export async function seedGroupsStage(stage: IGroupsStageConfig): Promise<void> 
 
     for (let i = 0; i < teamIds.length; i++) {
       for (let j = i + 1; j < teamIds.length; j++) {
+        //shuffle lado
+        const flip = (i + j) % 2 === 0;
+        const tA = flip ? teamIds[j] : teamIds[i];
+        const tB = flip ? teamIds[i] : teamIds[j];
+
         await createSeries({
-          teamA: teamIds[i],
-          teamB: teamIds[j],
+          teamA: tA,
+          teamB: tB,
           stageId: stage.id,
           stageType: 'groups',
           round: stage.name,
@@ -210,8 +215,8 @@ export async function seedGroupsStage(stage: IGroupsStageConfig): Promise<void> 
 
         if (stage.matchFormat === 'homeAndAway') {
           await createSeries({
-            teamA: teamIds[j],
-            teamB: teamIds[i],
+            teamA: tB,
+            teamB: tA,
             stageId: stage.id,
             stageType: 'groups',
             round: stage.name,
