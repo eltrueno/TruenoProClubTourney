@@ -30,7 +30,7 @@ async function submitResolve(seriesId: string, position: number) {
   <div v-else class="space-y-3">
     <div v-for="d in disputes" :key="key(d.seriesId, d.position)" class="card bg-base-100 shadow-sm border-l-2 border-error">
       <div class="card-body py-3 px-4">
-        <p class="text-sm font-medium">{{ d.round }} — Partida {{ d.position }}</p>
+        <p class="text-sm font-medium">{{ d.round }}<span v-if="d.bestOf > 1"> — Partida {{ d.position }}</span></p>
         <p class="text-xs opacity-50 mb-2">{{ d.teamA?.name }} vs {{ d.teamB?.name }}</p>
 
         <div class="grid sm:grid-cols-2 gap-2 text-xs mb-3">

@@ -30,7 +30,8 @@ export async function listEaCandidates(req: Request, res: Response) {
     return apiError(res, 400, 'BAD_REQUEST', 'Falta eaClubId');
   }
   const candidates = await eaService.listRecentClubMatches(eaClubId);
-  res.json(candidates);
+  const usedIds = await seriesService.filterConfirmedEaMatchIds(candidates.map((c) => c.eaMatchId));
+  res.json(candidates.filter((c) => !usedIds.has(c.eaMatchId)));
 }
 
 export async function selectCandidate(req: Request, res: Response) {

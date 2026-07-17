@@ -253,7 +253,7 @@ function formatMatchScore(teamData: any) {
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium">Partida {{ match.position }}</span>
+                    <span class="text-sm font-medium">{{ s.bestOf > 1 ? `Partida ${match.position}` : 'Resultado' }}</span>
                     <span class="badge badge-xs" :class="statusBadge[match.status]">{{ statusLabel[match.status] }}</span>
                     <span v-if="match.isManual" class="badge badge-xs badge-outline">Manual</span>
                   </div>

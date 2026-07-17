@@ -110,7 +110,7 @@ function formatScore(teamData: any) {
     <!-- Partidas -->
     <div v-for="match in series.matches" :key="match.position" class="space-y-4">
       <div class="flex items-center gap-3">
-        <h2 class="font-bold text-lg">Partida {{ match.position }}</h2>
+        <h2 class="font-bold text-lg">{{ series.bestOf > 1 ? `Partida ${match.position}` : 'Resultado' }}</h2>
         <span class="badge badge-sm" :class="statusBadge[match.status]">{{ match.status.replace(/_/g, ' ') }}</span>
         <span v-if="match.effective?.teamA?.score != null" class="font-black text-xl tabular-nums ml-auto text-right">
           {{ formatScore(match.effective.teamA) }} – {{ formatScore(match.effective.teamB) }}

@@ -105,6 +105,26 @@ export async function getSeriesById(id: string): Promise<ISeries | null> {
   return doc ? toISeries(doc) : null;
 }
 
+/** De una lista de eaMatchId, devuelve el subconjunto que ya está confirmado en CUALQUIER serie (sirve para no ofrecerlos de nuevo como candidatos) */
+export async function filterConfirmedEaMatchIds(eaMatchIds: string[]): Promise<Set<string>> {
+  if (eaMatchIds.length === 0) return new Set();
+
+  const docs = await SeriesModel.find(
+    { matches: { $elemMatch: { eaMatchId: { $in: eaMatchIds }, status: 'confirmed' } } },
+    { matches: 1 }
+  );
+
+  const used = new Set<string>();
+  for (const doc of docs) {
+    for (const m of doc.matches) {
+      if (m.eaMatchId && m.status === 'confirmed' && eaMatchIds.includes(m.eaMatchId)) {
+        used.add(m.eaMatchId);
+      }
+    }
+  }
+  return used;
+}
+
 /** Uso interno del seed / resolver de bracket, no expuesto directo al capitan */
 export async function createSeries(input: {
   teamA?: string | null;
@@ -208,6 +228,14 @@ export async function selectCandidateForMatch(
 
   if (series.usedEaMatchIds.includes(candidate.eaMatchId)) {
     throw new ServiceError('ALREADY_USED', 'Esa partida de EA ya se ha usado en otro slot');
+  }
+
+  const usedElsewhere = await SeriesModel.exists({
+    _id: { $ne: series._id },
+    matches: { $elemMatch: { eaMatchId: candidate.eaMatchId, status: 'confirmed' } },
+  });
+  if (usedElsewhere) {
+    throw new ServiceError('ALREADY_USED', 'Esa partida de EA ya se ha usado en otro partido confirmado');
   }
 
   const match = findMatch(series, position);
@@ -430,6 +458,7 @@ export async function listDisputes() {
         teamA: series.teamA,
         teamB: series.teamB,
         round: series.round,
+        bestOf: series.bestOf,
         position: m.position,
         confirmations: m.confirmations,
         effective: m.effective,
