@@ -179,14 +179,9 @@ function formatMatchScore(teamData: any) {
     <!-- Error global -->
     <div v-else-if="globalError" class="alert alert-error">{{ globalError }}</div>
 
-    <!-- Sin partidos -->
-    <div v-else-if="series.length === 0" class="text-center py-12 opacity-50">
-      No tienes partidos pendientes ahora mismo.
-    </div>
-
     <!-- Panel -->
     <div v-else class="space-y-6">
-      <!-- Cabecera de equipo -->
+      <!-- Cabecera de equipo: siempre visible, independiente de si hay partidos -->
       <div v-if="myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300">
         <div class="flex items-center gap-4">
           <div class="avatar">
@@ -216,6 +211,11 @@ function formatMatchScore(teamData: any) {
             Cambiar ID
           </button>
         </div>
+      </div>
+
+      <!-- Sin partidos -->
+      <div v-if="series.length === 0" class="text-center py-12 opacity-50">
+        No tienes partidos pendientes ahora mismo.
       </div>
 
       <div v-for="s in series" :key="s.id" class="card bg-base-100 shadow">
@@ -335,11 +335,11 @@ function formatMatchScore(teamData: any) {
               </div>
               <div class="flex items-center justify-between font-bold text-lg tabular-nums">
                 <div class="flex-1 text-right">
-                  <div class="text-sm font-normal">{{ c.teamA.eaClubName ?? `Club ${c.teamA.eaClubId ?? '?'}` }}</div>
+                  <div class="text-sm font-normal" :class="{ 'text-primary font-bold': myTeam?.eaClubId === c.teamA.eaClubId }">{{ c.teamA.eaClubName ?? `Club ${c.teamA.eaClubId ?? '?'}` }}</div>
                 </div>
                 <div class="px-3 whitespace-nowrap">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</div>
                 <div class="flex-1 text-left">
-                  <div class="text-sm font-normal">{{ c.teamB.eaClubName ?? `Club ${c.teamB.eaClubId ?? '?'}` }}</div>
+                  <div class="text-sm font-normal" :class="{ 'text-primary font-bold': myTeam?.eaClubId === c.teamB.eaClubId }">{{ c.teamB.eaClubName ?? `Club ${c.teamB.eaClubId ?? '?'}` }}</div>
                 </div>
               </div>
               

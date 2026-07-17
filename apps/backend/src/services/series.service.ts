@@ -95,7 +95,7 @@ export async function listSeriesForCaptain(userId: string): Promise<import('@tru
     const s = toISeries(doc);
     return {
       ...s,
-      mySide: s.teamA === teamId ? 'A' : 'B',
+      mySide: idOf(doc.teamA) === teamId ? 'A' : 'B',
     };
   });
 }
@@ -247,7 +247,7 @@ export async function createManualMatch(
   requesterUserId: string,
   input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
 ): Promise<ISeries> {
-  const series = await SeriesModel.findById(seriesId);
+  const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   await resolveSide(series, requesterUserId);
@@ -276,7 +276,7 @@ export async function confirmMatch(
   position: number,
   requesterUserId: string
 ): Promise<ISeries> {
-  const series = await SeriesModel.findById(seriesId);
+  const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   const side = await resolveSide(series, requesterUserId);
@@ -311,7 +311,7 @@ export async function editMatch(
   patch: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } },
   changeDescription: string
 ): Promise<ISeries> {
-  const series = await SeriesModel.findById(seriesId);
+  const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   await resolveSide(series, requesterUserId);
@@ -344,7 +344,7 @@ export async function resolveDispute(
   adminUserId: string,
   input: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } }
 ): Promise<ISeries> {
-  const series = await SeriesModel.findById(seriesId);
+  const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   const match = findMatch(series, position);
