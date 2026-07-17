@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import type { ISeries, IEaCandidateMatch } from '@trueno-proclub-tourney/shared';
+import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge, ApiError } from '@/lib/api';
 import { useAuth } from '@/composables/useAuth';
 
@@ -9,38 +9,29 @@ const series = ref<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>
 const loading = ref(true);
 const globalError = ref<string | null>(null);
 
+const myTeam = ref<ITeam | null>(null);
+
 // Estados por slot
 const confirming = ref<Record<string, boolean>>({});
+const unselecting = ref<Record<string, boolean>>({});
 const slotError = ref<Record<string, string>>({});
 
 // Modal "Añadir partido de EA"
 const addingSlot = ref<{ seriesId: string; position: number } | null>(null);
 const candidates = ref<IEaCandidateMatch[]>([]);
 const candidatesLoading = ref(false);
+const candidatesLoadError = ref('');
+
+// Modo manual dentro del modal de añadir partido
+const manualMode = ref(false);
+const manualAck = ref(false);
+const manualForm = ref({ scoreA: 0, scoreB: 0, penA: null as number | null, penB: null as number | null });
+const manualSaving = ref(false);
+const manualError = ref('');
 
 // Modal "Algo no cuadra"
 const editingSlot = ref<{ seriesId: string; position: number; scoreA: number; scoreB: number; penA: number | null; penB: number | null } | null>(null);
 const editDescription = ref('');
-
-const myTeam = ref<import('@trueno-proclub-tourney/shared').ITeam | null>(null);
-const eaClubIdInput = ref('');
-const savingEaClubId = ref(false);
-const eaClubIdError = ref('');
-
-async function saveEaClubId() {
-  if (!myTeam.value || !eaClubIdInput.value.trim()) return;
-  savingEaClubId.value = true;
-  eaClubIdError.value = '';
-  try {
-    myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
-    const modal = document.getElementById('ea_modal') as HTMLDialogElement;
-    if (modal) modal.close();
-  } catch (e) {
-    eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
-  } finally {
-    savingEaClubId.value = false;
-  }
-}
 
 async function loadMySeries() {
   try {
@@ -66,18 +57,31 @@ watch(
 
 function slotKey(seriesId: string, position: number) { return `${seriesId}-${position}`; }
 
+function updateSeries(seriesId: string, updated: ISeries) {
+  series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
+}
+
 async function openAddModal(seriesId: string, position: number, eaClubId: string) {
   addingSlot.value = { seriesId, position };
   candidatesLoading.value = true;
+  candidatesLoadError.value = '';
   candidates.value = [];
+  manualMode.value = false;
+  manualAck.value = false;
+  manualForm.value = { scoreA: 0, scoreB: 0, penA: null, penB: null };
+  manualError.value = '';
   try {
     candidates.value = await api.getEaCandidates(eaClubId);
   } catch (e) {
-    slotError.value[slotKey(seriesId, position)] = e instanceof Error ? e.message : 'Error';
-    addingSlot.value = null;
+    candidatesLoadError.value = e instanceof Error ? e.message : 'Error buscando partidos en EA';
   } finally {
     candidatesLoading.value = false;
   }
+}
+
+function closeAddModal() {
+  addingSlot.value = null;
+  manualMode.value = false;
 }
 
 async function selectCandidate(candidate: IEaCandidateMatch) {
@@ -87,10 +91,30 @@ async function selectCandidate(candidate: IEaCandidateMatch) {
   slotError.value[key] = '';
   try {
     const updated = await api.selectCandidate(seriesId, position, candidate);
-    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
-    addingSlot.value = null;
+    updateSeries(seriesId, updated);
+    closeAddModal();
   } catch (e) {
     slotError.value[key] = e instanceof Error ? e.message : 'Error';
+  }
+}
+
+async function submitManualMatch() {
+  if (!addingSlot.value || !manualAck.value) return;
+  const { seriesId, position } = addingSlot.value;
+  const key = slotKey(seriesId, position);
+  manualSaving.value = true;
+  manualError.value = '';
+  try {
+    const updated = await api.createManualMatch(seriesId, position, {
+      teamA: { score: manualForm.value.scoreA, penaltiesScore: manualForm.value.penA },
+      teamB: { score: manualForm.value.scoreB, penaltiesScore: manualForm.value.penB },
+    });
+    updateSeries(seriesId, updated);
+    closeAddModal();
+  } catch (e) {
+    manualError.value = e instanceof Error ? e.message : 'Error guardando el partido manual';
+  } finally {
+    manualSaving.value = false;
   }
 }
 
@@ -100,11 +124,28 @@ async function confirm(seriesId: string, position: number) {
   slotError.value[key] = '';
   try {
     const updated = await api.confirmMatch(seriesId, position);
-    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
+    updateSeries(seriesId, updated);
   } catch (e) {
     slotError.value[key] = e instanceof ApiError ? e.message : 'Error confirmando';
   } finally {
     confirming.value[key] = false;
+  }
+}
+
+async function unselectMatch(seriesId: string, position: number) {
+  const key = slotKey(seriesId, position);
+  if (!window.confirm('¿Seguro que quieres quitar este partido? Se perderán las confirmaciones y podrás seleccionar otro distinto.')) {
+    return;
+  }
+  unselecting.value[key] = true;
+  slotError.value[key] = '';
+  try {
+    const updated = await api.unselectMatch(seriesId, position);
+    updateSeries(seriesId, updated);
+  } catch (e) {
+    slotError.value[key] = e instanceof ApiError ? e.message : 'Error quitando el partido';
+  } finally {
+    unselecting.value[key] = false;
   }
 }
 
@@ -130,7 +171,7 @@ async function submitEdit() {
       teamB: { score: scoreB, penaltiesScore: penB },
       changeDescription: editDescription.value,
     });
-    series.value = series.value.map((s) => s.id === seriesId ? (updated as import('@trueno-proclub-tourney/shared').IMySeriesResponse) : s);
+    updateSeries(seriesId, updated);
     editingSlot.value = null;
   } catch (e) {
     slotError.value[key] = e instanceof Error ? e.message : 'Error';
@@ -179,56 +220,29 @@ function formatMatchScore(teamData: any) {
     <!-- Error global -->
     <div v-else-if="globalError" class="alert alert-error">{{ globalError }}</div>
 
+    <!-- Sin partidos -->
+    <div v-else-if="series.length === 0" class="text-center py-12 opacity-50">
+      No tienes partidos pendientes ahora mismo.
+    </div>
+
     <!-- Panel -->
     <div v-else class="space-y-6">
-      <!-- Cabecera de equipo: siempre visible, independiente de si hay partidos -->
-      <div v-if="myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300">
-        <div class="flex items-center gap-4">
-          <div class="avatar">
-            <div class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm">
-              <span v-if="!teamBadge(myTeam)">{{ myTeam.name.charAt(0) }}</span>
-              <img v-else :src="teamBadge(myTeam)!" class="object-contain" />
-            </div>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>
-            <p class="text-xs opacity-60">Capitán: {{ user?.name }}</p>
-          </div>
-        </div>
-        
-        <!-- Configuración de EA Club ID -->
-        <div class="flex items-center gap-2">
-          <div v-if="myTeam.eaClubId" class="text-right">
-            <div class="text-xs opacity-60 mb-1">Club EA configurado</div>
-            <div class="font-bold text-sm">{{ myTeam.eaClubName ?? '(nombre no disponible)' }}</div>
-            <div class="font-mono text-xs opacity-60 bg-base-300 px-2 py-0.5 rounded inline-block mt-0.5">ID {{ myTeam.eaClubId }}</div>
-          </div>
-          <div v-else class="text-right text-warning">
-            <div class="text-xs font-bold mb-1">¡Falta EA Club ID!</div>
-            <div class="text-xs">No podrás reportar partidos</div>
-          </div>
-          <button class="btn btn-sm btn-outline ml-2" onclick="document.getElementById('ea_modal').showModal()">
-            Cambiar ID
-          </button>
-        </div>
-      </div>
-
-      <!-- Sin partidos -->
-      <div v-if="series.length === 0" class="text-center py-12 opacity-50">
-        No tienes partidos pendientes ahora mismo.
-      </div>
-
       <div v-for="s in series" :key="s.id" class="card bg-base-100 shadow">
         <div class="card-body">
           <!-- Cabecera de la serie -->
           <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
             <div class="flex flex-wrap items-center gap-3">
               <div class="font-bold text-lg flex items-center gap-2">
+                <img v-if="teamBadge(s.teamA as any)" :src="teamBadge(s.teamA as any)!" class="w-6 h-6 object-contain" />
                 <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
+                <span v-if="s.mySide === 'A'" class="badge badge-primary badge-xs">Tú</span>
                 <span class="opacity-30 text-sm font-normal">vs</span>
                 <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
+                <span v-if="s.mySide === 'B'" class="badge badge-primary badge-xs">Tú</span>
+                <img v-if="teamBadge(s.teamB as any)" :src="teamBadge(s.teamB as any)!" class="w-6 h-6 object-contain" />
               </div>
               <span class="badge badge-sm badge-ghost">{{ s.round }}</span>
+              <span class="badge badge-sm badge-ghost">Bo{{ s.bestOf }}</span>
             </div>
             <span class="text-sm opacity-50">{{ s.stageType === 'groups' ? `Grupo ${s.group}` : s.stageType }}</span>
           </div>
@@ -241,6 +255,7 @@ function formatMatchScore(teamData: any) {
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-sm font-medium">Partida {{ match.position }}</span>
                     <span class="badge badge-xs" :class="statusBadge[match.status]">{{ statusLabel[match.status] }}</span>
+                    <span v-if="match.isManual" class="badge badge-xs badge-outline">Manual</span>
                   </div>
 
                   <!-- Marcador actual -->
@@ -271,7 +286,7 @@ function formatMatchScore(teamData: any) {
                 </div>
 
                 <!-- Acciones -->
-                <div class="flex flex-col gap-2 shrink-0">
+                <div class="flex flex-col gap-2 shrink-0 items-end">
                   <!-- Sin seleccionar: botón añadir -->
                   <button
                     v-if="match.status === 'unselected' && myTeam?.eaClubId"
@@ -284,21 +299,31 @@ function formatMatchScore(teamData: any) {
                     Configura el eaClubId de tu equipo antes de reportar
                   </div>
 
-                  <!-- Pendiente: confirmar o editar -->
+                  <!-- Pendiente: confirmar, editar o quitar -->
                   <template v-else-if="match.status === 'pending_confirmation'">
+                    <div class="flex gap-2">
+                      <button
+                        class="btn btn-sm btn-success"
+                        :class="{ 'loading loading-spinner': confirming[slotKey(s.id, match.position)] }"
+                        :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId"
+                        @click="confirm(s.id, match.position)"
+                      >
+                        {{ match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId ? 'Ya confirmado' : 'Todo correcto' }}
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline btn-warning"
+                        @click="openEditModal(s.id, match.position, match)"
+                      >
+                        Algo no cuadra
+                      </button>
+                    </div>
                     <button
-                      class="btn btn-sm btn-success"
-                      :class="{ 'loading loading-spinner': confirming[slotKey(s.id, match.position)] }"
-                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId"
-                      @click="confirm(s.id, match.position)"
+                      class="btn btn-xs btn-ghost text-error"
+                      :class="{ 'loading loading-spinner': unselecting[slotKey(s.id, match.position)] }"
+                      :disabled="!!unselecting[slotKey(s.id, match.position)]"
+                      @click="unselectMatch(s.id, match.position)"
                     >
-                      {{ match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId ? 'Ya confirmado' : 'Todo correcto' }}
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline btn-warning"
-                      @click="openEditModal(s.id, match.position, match)"
-                    >
-                      Algo no cuadra
+                      Quitar partido
                     </button>
                   </template>
                 </div>
@@ -309,67 +334,121 @@ function formatMatchScore(teamData: any) {
       </div>
     </div>
 
-    <!-- Modal: elegir partido de EA -->
+    <!-- Modal: elegir partido de EA / manual -->
     <dialog v-if="addingSlot" class="modal modal-open">
       <div class="modal-box max-w-lg">
-        <h3 class="font-bold text-lg mb-4">Selecciona el partido</h3>
-        <div v-if="candidatesLoading" class="flex justify-center py-8">
-          <span class="loading loading-spinner loading-md"></span>
-        </div>
-        <div v-else-if="candidates.length === 0" class="opacity-50 text-sm text-center py-4">
-          No se encontraron partidos recientes en EA.
-        </div>
-        <div v-else class="space-y-2 max-h-96 overflow-y-auto pr-2">
-          <div
-            v-for="c in candidates"
-            :key="c.eaMatchId"
-            class="card bg-base-200 shadow-sm cursor-pointer hover:bg-base-300 transition-colors"
-            @click="selectCandidate(c)"
-          >
-            <div class="card-body p-3">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs opacity-60">{{ new Date(c.playedAt).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }) }}</span>
-                <span class="badge badge-xs" :class="(c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'badge-success' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'badge-error' : 'badge-warning'">
-                  {{ (c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'Victoria' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'Derrota' : 'Empate' }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between font-bold text-lg tabular-nums">
-                <div class="flex-1 text-right">
-                  <div class="text-sm font-normal" :class="{ 'text-primary font-bold': myTeam?.eaClubId === c.teamA.eaClubId }">{{ c.teamA.eaClubName ?? `Club ${c.teamA.eaClubId ?? '?'}` }}</div>
-                </div>
-                <div class="px-3 whitespace-nowrap">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</div>
-                <div class="flex-1 text-left">
-                  <div class="text-sm font-normal" :class="{ 'text-primary font-bold': myTeam?.eaClubId === c.teamB.eaClubId }">{{ c.teamB.eaClubName ?? `Club ${c.teamB.eaClubId ?? '?'}` }}</div>
-                </div>
-              </div>
-              
-              <!-- Scorers -->
-              <div class="mt-2 text-xs opacity-75 flex justify-between gap-4">
-                <div class="flex-1 text-right">
-                  <span v-for="p in c.teamA.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
-                    ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
-                  </span>
-                </div>
-                <div class="flex-1 text-left">
-                  <span v-for="p in c.teamB.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
-                    ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
-                  </span>
-                </div>
-              </div>
+        <h3 class="font-bold text-lg mb-4">{{ manualMode ? 'Añadir partido a mano' : 'Selecciona el partido' }}</h3>
 
-              <!-- DNF / PEN -->
-              <div v-if="c.winnerByDnf || c.winnerByPen" class="mt-2 flex gap-1 justify-center">
-                <span v-if="c.winnerByDnf" class="badge badge-error badge-outline badge-xs">DNF</span>
-                <span v-if="c.winnerByPen" class="badge badge-info badge-outline badge-xs">Penaltis</span>
+        <!-- Vista de candidatos de EA -->
+        <template v-if="!manualMode">
+          <div v-if="candidatesLoading" class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-md"></span>
+          </div>
+          <div v-else-if="candidatesLoadError" class="alert alert-error text-sm">{{ candidatesLoadError }}</div>
+          <template v-else>
+            <div v-if="candidates.length === 0" class="opacity-50 text-sm text-center py-4">
+              No se encontraron partidos recientes en EA.
+            </div>
+            <div v-else class="space-y-2 max-h-96 overflow-y-auto pr-2">
+              <div
+                v-for="c in candidates"
+                :key="c.eaMatchId"
+                class="card bg-base-200 shadow-sm cursor-pointer hover:bg-base-300 transition-colors"
+                @click="selectCandidate(c)"
+              >
+                <div class="card-body p-3">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs opacity-60">{{ new Date(c.playedAt).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }) }}</span>
+                    <span class="badge badge-xs" :class="(c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'badge-success' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'badge-error' : 'badge-warning'">
+                      {{ (c.teamA.score ?? 0) > (c.teamB.score ?? 0) ? 'Victoria' : (c.teamA.score ?? 0) < (c.teamB.score ?? 0) ? 'Derrota' : 'Empate' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between font-bold text-lg tabular-nums">
+                    <div class="flex-1 text-right">
+                      <div class="text-xs font-normal opacity-60 mb-0.5">Tu equipo</div>
+                      <div class="text-sm font-bold text-primary">{{ c.teamA.eaClubName ?? `Club ${c.teamA.eaClubId ?? '?'}` }}</div>
+                    </div>
+                    <div class="px-3 whitespace-nowrap">{{ formatMatchScore(c.teamA) }} – {{ formatMatchScore(c.teamB) }}</div>
+                    <div class="flex-1 text-left">
+                      <div class="text-xs font-normal opacity-60 mb-0.5">Rival</div>
+                      <div class="text-sm font-normal">{{ c.teamB.eaClubName ?? `Club ${c.teamB.eaClubId ?? '?'}` }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Scorers -->
+                  <div class="mt-2 text-xs opacity-75 flex justify-between gap-4">
+                    <div class="flex-1 text-right">
+                      <span v-for="p in c.teamA.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
+                        ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
+                      </span>
+                    </div>
+                    <div class="flex-1 text-left">
+                      <span v-for="p in c.teamB.players.filter(p => p.goals > 0)" :key="p.eaId" class="block">
+                        ⚽ {{ p.name }} <span v-if="p.goals > 1">x{{ p.goals }}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- DNF / PEN -->
+                  <div v-if="c.winnerByDnf || c.winnerByPen" class="mt-2 flex gap-1 justify-center">
+                    <span v-if="c.winnerByDnf" class="badge badge-error badge-outline badge-xs">DNF</span>
+                    <span v-if="c.winnerByPen" class="badge badge-info badge-outline badge-xs">Penaltis</span>
+                  </div>
+                </div>
               </div>
             </div>
+          </template>
+
+          <div class="divider text-xs opacity-50 my-4">o si no aparece</div>
+          <button class="btn btn-sm btn-outline btn-warning w-full" @click="manualMode = true">
+            No está el partido, añadirlo a mano
+          </button>
+        </template>
+
+        <!-- Vista manual -->
+        <template v-else>
+          <div class="alert alert-warning text-sm mb-3 flex-col items-start gap-1">
+            <p class="font-bold">Antes de continuar:</p>
+            <ul class="list-disc list-inside space-y-0.5">
+              <li>EA tarda unos minutos en publicar el partido. Espera y vuelve a intentar buscarlo antes de meterlo a mano.</li>
+              <li>Recarga esta página y repite la búsqueda: puede que ya haya aparecido.</li>
+              <li>Un resultado manual no tiene ninguna prueba automática asociada — si hay disputa, un admin podrá pedir capturas de pantalla.</li>
+              <li>El rival tendrá que confirmar igualmente este marcador.</li>
+            </ul>
           </div>
-        </div>
-        <div class="modal-action">
-          <button class="btn btn-ghost btn-sm" @click="addingSlot = null">Cancelar</button>
+
+          <div class="flex items-center gap-4 justify-center mb-2">
+            <div class="text-center">
+              <div class="text-xs opacity-60 mb-1">Tu equipo</div>
+              <input v-model.number="manualForm.scoreA" type="number" min="0" class="input input-bordered w-20 text-center text-xl font-bold" />
+            </div>
+            <span class="text-2xl font-bold mt-5">–</span>
+            <div class="text-center">
+              <div class="text-xs opacity-60 mb-1">Rival</div>
+              <input v-model.number="manualForm.scoreB" type="number" min="0" class="input input-bordered w-20 text-center text-xl font-bold" />
+            </div>
+          </div>
+
+          <label class="label cursor-pointer justify-start gap-2 mt-2">
+            <input type="checkbox" v-model="manualAck" class="checkbox checkbox-sm checkbox-warning" />
+            <span class="label-text text-sm">He esperado, he recargado y el partido sigue sin aparecer. Entiendo que este resultado no tiene prueba automática.</span>
+          </label>
+
+          <p v-if="manualError" class="text-error text-xs mt-2">{{ manualError }}</p>
+
+          <div class="modal-action">
+            <button class="btn btn-ghost btn-sm" @click="manualMode = false">Volver a buscar en EA</button>
+            <button class="btn btn-warning btn-sm" :disabled="!manualAck || manualSaving" @click="submitManualMatch">
+              {{ manualSaving ? 'Guardando...' : 'Guardar resultado manual' }}
+            </button>
+          </div>
+        </template>
+
+        <div v-if="!manualMode" class="modal-action">
+          <button class="btn btn-ghost btn-sm" @click="closeAddModal">Cancelar</button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="addingSlot = null"></div>
+      <div class="modal-backdrop" @click="closeAddModal"></div>
     </dialog>
 
     <!-- Modal: editar marcador -->
@@ -393,26 +472,7 @@ function formatMatchScore(teamData: any) {
           <button class="btn btn-warning btn-sm" :disabled="!editDescription.trim()" @click="submitEdit">Guardar</button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="addingSlot = null"></div>
-    </dialog>
-
-    <!-- Modal: Cambiar EA ID -->
-    <dialog id="ea_modal" class="modal">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg">Configurar EA Club ID</h3>
-        <p class="py-4 text-sm opacity-80">Introduce el ID numérico de tu club en EA FC. Es necesario para que el sistema busque los partidos automáticamente.</p>
-        <input v-model="eaClubIdInput" placeholder="Ej: 1234567" class="input input-bordered w-full mb-2" />
-        <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
-        <div class="modal-action">
-          <form method="dialog">
-            <button class="btn btn-ghost mr-2">Cancelar</button>
-            <button class="btn btn-primary" :disabled="savingEaClubId" @click.prevent="saveEaClubId()">
-              {{ savingEaClubId ? 'Guardando...' : 'Guardar' }}
-            </button>
-          </form>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+      <div class="modal-backdrop" @click="editingSlot = null"></div>
     </dialog>
   </div>
 </template>

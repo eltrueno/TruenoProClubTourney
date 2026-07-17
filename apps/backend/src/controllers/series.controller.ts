@@ -51,6 +51,11 @@ export async function selectCandidate(req: Request, res: Response) {
 }
 
 export async function createManual(req: Request, res: Response) {
+  const { teamA, teamB } = req.body ?? {};
+  if (typeof teamA?.score !== 'number' || typeof teamB?.score !== 'number') {
+    return apiError(res, 400, 'BAD_REQUEST', 'Faltan los marcadores de teamA/teamB');
+  }
+
   try {
     const series = await seriesService.createManualMatch(
       req.params.id,
@@ -68,6 +73,15 @@ export async function confirm(req: Request, res: Response) {
   try {
     const series = await seriesService.confirmMatch(req.params.id, Number(req.params.position), req.user!.id);
     await maybePropagate(series.id, series.stageId, series.status);
+    res.json(series);
+  } catch (err) {
+    handleServiceError(err, res);
+  }
+}
+
+export async function unselect(req: Request, res: Response) {
+  try {
+    const series = await seriesService.unselectMatch(req.params.id, Number(req.params.position), req.user!.id);
     res.json(series);
   } catch (err) {
     handleServiceError(err, res);
@@ -110,6 +124,7 @@ function handleServiceError(err: unknown, res: Response) {
       NOT_A_CAPTAIN: 403,
       ALREADY_USED: 409,
       ALREADY_SET: 409,
+      CANNOT_UNSELECT: 409,
       NOTHING_TO_CONFIRM: 400,
     };
     return res.status(statusByCode[err.code] ?? 400).json({ status: { code: err.code, message: err.message } });

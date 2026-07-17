@@ -303,6 +303,49 @@ export async function confirmMatch(
   return toISeries(series);
 }
 
+/**
+ * Quita un partido ya seleccionado (pendiente de confirmación) y deja el slot
+ * en "unselected" de nuevo, para que cualquiera de los dos capitanes pueda
+ * elegir otro. Solo se permite mientras esté "pending_confirmation": si ya
+ * está "confirmed" (ambos confirmaron) o "disputed", hay que pasar por el
+ * flujo de edición/disputa en vez de esto.
+ */
+export async function unselectMatch(
+  seriesId: string,
+  position: number,
+  requesterUserId: string
+): Promise<ISeries> {
+  const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
+  if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
+
+  await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
+
+  const match = findMatch(series, position);
+  if (match.status !== 'pending_confirmation') {
+    throw new ServiceError(
+      'CANNOT_UNSELECT',
+      'Solo se puede quitar un partido mientras está pendiente de confirmación'
+    );
+  }
+
+  if (match.eaMatchId) {
+    series.usedEaMatchIds = series.usedEaMatchIds.filter((id) => id !== match.eaMatchId);
+  }
+
+  match.status = 'unselected';
+  match.eaMatchId = undefined;
+  match.isManual = false;
+  match.winnerByDnf = undefined;
+  match.winnerByPen = undefined;
+  match.original = undefined;
+  match.effective = { teamA: null, teamB: null } as any;
+  match.confirmations = {};
+
+  recomputeSeriesStatus(series);
+  await series.save();
+  return toISeries(series);
+}
+
 /** Edicion manual del resultado ("Algo no cuadra"): reabre la confirmacion de ambos lados */
 export async function editMatch(
   seriesId: string,

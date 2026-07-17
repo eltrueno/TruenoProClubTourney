@@ -12,6 +12,8 @@ onMounted(loadTeams);
 
 const form = ref({ name: '', countryCode: '', logoUrl: '', group: '' });
 const captainInputs = ref<Record<string, string>>({});
+const assigningTeamId = ref<string | null>(null);
+const assignError = ref<Record<string, string>>({});
 
 async function submitCreate() {
   const body: any = { name: form.value.name, group: form.value.group || undefined };
@@ -26,16 +28,29 @@ async function submitCreate() {
 }
 
 async function submitCaptain(teamId: string) {
-  const userId = captainInputs.value[teamId];
+  const userId = captainInputs.value[teamId]?.trim();
   if (!userId) return;
-  await assign(teamId, userId);
-  captainInputs.value[teamId] = '';
+  assigningTeamId.value = teamId;
+  assignError.value[teamId] = '';
+  const result = await assign(teamId, userId);
+  if (!result) {
+    assignError.value[teamId] = 'No se pudo asignar (revisa el userId)';
+  } else {
+    captainInputs.value[teamId] = '';
+  }
+  assigningTeamId.value = null;
   await loadTeams();
 }
 
 async function removeCaptainFor(teamId: string) {
+  if (!window.confirm('¿Quitar el capitán de este equipo? El capitán actual perderá el acceso a su panel.')) return;
   await unassign(teamId);
   await loadTeams();
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
 }
 </script>
 
@@ -61,24 +76,67 @@ async function removeCaptainFor(teamId: string) {
     <!-- Listado -->
     <div v-if="loading" class="flex justify-center py-8"><span class="loading loading-spinner"></span></div>
     <div v-else-if="error" class="alert alert-error">{{ error.message }}</div>
-    <div v-else class="space-y-2">
+    <div v-else class="space-y-3">
       <div v-for="team in teams" :key="team.id" class="card bg-base-100 shadow-sm">
-        <div class="card-body py-3 px-4">
+        <div class="card-body py-4 px-4 gap-3">
+          <!-- Fila superior: identidad del equipo -->
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <img v-if="team.logoUrl || team.countryCode" :src="team.logoUrl ?? `https://flagcdn.com/${team.countryCode}.svg`" class="w-6 h-6 object-contain" />
-              <span class="font-medium">{{ team.name }}</span>
+              <span class="font-bold">{{ team.name }}</span>
               <span v-if="team.group" class="badge badge-ghost badge-sm">Grupo {{ team.group }}</span>
-              <span v-if="team.eaClubId" class="badge badge-success badge-sm">EA: {{ team.eaClubId }}</span>
-              <span v-else class="badge badge-ghost badge-sm">Sin eaClubId</span>
             </div>
-            <div class="flex items-center gap-2">
-              <input v-model="captainInputs[team.id]" placeholder="userId capitán" class="input input-bordered input-xs w-32" />
-              <button class="btn btn-xs btn-primary" @click="submitCaptain(team.id)">Asignar</button>
-              <button class="btn btn-xs btn-ghost" @click="removeCaptainFor(team.id)">Quitar</button>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3 border-t pt-3">
+            <!-- Columna EA Club -->
+            <div>
+              <div class="text-xs font-bold opacity-60 mb-1">Club EA</div>
+              <template v-if="team.eaClubId">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="badge badge-success badge-sm">{{ team.eaClubName ?? '(nombre no disponible)' }}</span>
+                  <span class="font-mono text-xs opacity-60 bg-base-300 px-2 py-0.5 rounded">ID {{ team.eaClubId }}</span>
+                </div>
+                <div v-if="team.eaClubIdSetAt" class="text-xs opacity-50 mt-1">
+                  Configurado el {{ formatDate(team.eaClubIdSetAt) }}
+                </div>
+              </template>
+              <span v-else class="badge badge-ghost badge-sm">Sin eaClubId configurado</span>
+            </div>
+
+            <!-- Columna Capitán -->
+            <div>
+              <div class="text-xs font-bold opacity-60 mb-1">Capitán</div>
+              <div v-if="team.captainName" class="flex items-center gap-2 flex-wrap mb-2">
+                <span class="badge badge-primary badge-sm">{{ team.captainName }}</span>
+                <button class="btn btn-xs btn-ghost text-error" @click="removeCaptainFor(team.id)">Quitar</button>
+              </div>
+              <div v-else class="text-xs opacity-50 mb-2">Sin capitán asignado</div>
+
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="captainInputs[team.id]"
+                  placeholder="userId del capitán"
+                  class="input input-bordered input-xs w-36"
+                  @keyup.enter="submitCaptain(team.id)"
+                />
+                <button
+                  class="btn btn-xs btn-primary"
+                  :class="{ 'loading loading-spinner': assigningTeamId === team.id }"
+                  :disabled="assigningTeamId === team.id"
+                  @click="submitCaptain(team.id)"
+                >
+                  {{ team.captainName ? 'Reasignar' : 'Asignar' }}
+                </button>
+              </div>
+              <p v-if="assignError[team.id]" class="text-error text-xs mt-1">{{ assignError[team.id] }}</p>
             </div>
           </div>
         </div>
+      </div>
+
+      <div v-if="teams && teams.length === 0" class="text-center py-8 opacity-50">
+        Todavía no hay equipos creados.
       </div>
     </div>
   </div>

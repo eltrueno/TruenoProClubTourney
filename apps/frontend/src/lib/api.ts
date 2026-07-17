@@ -3,6 +3,8 @@ import type { IEaCandidateMatch } from '@trueno-proclub-tourney/shared';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:4000';
 
+const emptyStats = { goals: 0, shots: 0, passesMade: 0, passesSuccess: 0, tacklesMade: 0, tacklesSuccess: 0, redCards: 0 };
+
 export class ApiError extends Error {
   constructor(public code: string, message: string) {
     super(message);
@@ -45,6 +47,20 @@ export const api = {
     }),
   confirmMatch: (seriesId: string, position: number) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/confirm`, { method: 'POST' }),
+  unselectMatch: (seriesId: string, position: number) =>
+    apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/unselect`, { method: 'POST' }),
+  createManualMatch: (
+    seriesId: string,
+    position: number,
+    body: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } }
+  ) =>
+    apiFetch<ISeries>(`/series/${seriesId}/matches/${position}/manual`, {
+      method: 'POST',
+      body: JSON.stringify({
+        teamA: { ...body.teamA, stats: emptyStats, players: [] },
+        teamB: { ...body.teamB, stats: emptyStats, players: [] },
+      }),
+    }),
   editMatch: (seriesId: string, position: number, body: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null }; changeDescription: string }) =>
     apiFetch<ISeries>(`/series/${seriesId}/matches/${position}`, {
       method: 'PATCH',

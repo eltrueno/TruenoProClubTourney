@@ -17,4 +17,5 @@ seriesRouter.get('/:id', seriesController.getOne);
 seriesRouter.post('/:id/matches/:position/select-candidate', requireAuth, seriesController.selectCandidate);
 seriesRouter.post('/:id/matches/:position/manual', requireAuth, seriesController.createManual);
 seriesRouter.post('/:id/matches/:position/confirm', requireAuth, seriesController.confirm);
+seriesRouter.post('/:id/matches/:position/unselect', requireAuth, seriesController.unselect);
 seriesRouter.patch('/:id/matches/:position', requireAuth, seriesController.edit);

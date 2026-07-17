@@ -1,10 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CaptainTeamHeader from '../components/CaptainTeamHeader.vue';
 import CaptainPanel from '../components/CaptainPanel.vue';
 ---
 <Layout title="Panel de capitán">
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-black">Tus partidos</h1>
   </div>
+  <CaptainTeamHeader client:load />
   <CaptainPanel client:load />
 </Layout>
