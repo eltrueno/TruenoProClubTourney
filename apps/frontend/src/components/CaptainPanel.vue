@@ -258,9 +258,10 @@ function formatMatchScore(teamData: any) {
 
                   <!-- Confirmaciones -->
                   <div v-if="match.status === 'pending_confirmation'" class="text-xs opacity-50 mt-1">
-                    <span v-if="match.confirmations?.byTeamA && match.confirmations?.byTeamB">Ambos confirmaron</span>
-                    <span v-else-if="match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']" class="text-success">Tu equipo confirmó — esperando al rival</span>
-                    <span v-else>El rival confirmó — falta tu confirmación</span>
+                    <span v-if="match.confirmations?.byTeamA?.userId && match.confirmations?.byTeamB?.userId">Ambos confirmaron</span>
+                    <span v-else-if="match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId" class="text-success">Tu equipo confirmó — esperando al rival</span>
+                    <span v-else-if="match.confirmations?.[s.mySide === 'A' ? 'byTeamB' : 'byTeamA']?.userId" class="text-warning">El rival confirmó — falta tu confirmación</span>
+                    <span v-else>Esperando confirmación de ambos equipos</span>
                   </div>
 
                   <!-- Disputa -->
@@ -288,10 +289,10 @@ function formatMatchScore(teamData: any) {
                     <button
                       class="btn btn-sm btn-success"
                       :class="{ 'loading loading-spinner': confirming[slotKey(s.id, match.position)] }"
-                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']"
+                      :disabled="!!confirming[slotKey(s.id, match.position)] || !!match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId"
                       @click="confirm(s.id, match.position)"
                     >
-                      {{ match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB'] ? 'Ya confirmado' : 'Todo correcto' }}
+                      {{ match.confirmations?.[s.mySide === 'A' ? 'byTeamA' : 'byTeamB']?.userId ? 'Ya confirmado' : 'Todo correcto' }}
                     </button>
                     <button
                       class="btn btn-sm btn-outline btn-warning"

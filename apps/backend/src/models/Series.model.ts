@@ -133,16 +133,24 @@ const matchSchema = new Schema<IMatchDoc>(
     },
     confirmations: {
       byTeamA: {
-        userId: String,
-        at: Date,
-        teamA: { score: Number, penaltiesScore: Number },
-        teamB: { score: Number, penaltiesScore: Number }
+        type: {
+          userId: String,
+          at: Date,
+          teamA: { type: { score: Number, penaltiesScore: Number }, _id: false },
+          teamB: { type: { score: Number, penaltiesScore: Number }, _id: false },
+        },
+        _id: false,
+        default: undefined,
       },
       byTeamB: {
-        userId: String,
-        at: Date,
-        teamA: { score: Number, penaltiesScore: Number },
-        teamB: { score: Number, penaltiesScore: Number }
+        type: {
+          userId: String,
+          at: Date,
+          teamA: { type: { score: Number, penaltiesScore: Number }, _id: false },
+          teamB: { type: { score: Number, penaltiesScore: Number }, _id: false },
+        },
+        _id: false,
+        default: undefined,
       },
     },
   },

@@ -131,6 +131,12 @@ export async function createSeries(input: {
   return toISeries(doc);
 }
 
+/** Extrae el id de un campo que puede venir como ObjectId sin poblar o como documento poblado */
+function idOf(value: any): string | null {
+  if (!value) return null;
+  return (value._id ?? value).toString();
+}
+
 /** Determina si requesterUserId es capitan de teamA o teamB de esta serie */
 async function resolveSide(
   series: ISeriesDoc,
@@ -139,8 +145,8 @@ async function resolveSide(
   const teamId = await getTeamIdForCaptain(requesterUserId);
   if (!teamId) throw new ServiceError('NOT_A_CAPTAIN', 'No eres capitan de ningun equipo');
 
-  if (series.teamA?.toString() === teamId) return 'A';
-  if (series.teamB?.toString() === teamId) return 'B';
+  if (idOf(series.teamA) === teamId) return 'A';
+  if (idOf(series.teamB) === teamId) return 'B';
 
   throw new ServiceError('FORBIDDEN', 'No eres capitan de ninguno de los dos equipos de esta serie');
 }
@@ -159,6 +165,33 @@ function findMatch(series: ISeriesDoc, position: number): IMatchDoc {
   const match = series.matches.find((m) => m.position === position);
   if (!match) throw new ServiceError('NOT_FOUND', 'Partida no encontrada en esta serie');
   return match;
+}
+
+/** If EA_VALIDATE_OPPONENT is 'false' the validation of EA's opponent matching the series' opponent is disabled (useful in local/testing) */
+const VALIDATE_OPPONENT = process.env.EA_VALIDATE_OPPONENT !== 'false';
+
+/**
+ * Determines the teamA/teamB order of the candidate according to the expected eaClubIds
+ * in the series, flipping if they come in reverse order. If it doesn't match either side,
+ * throws INVALID_OPPONENT (unless validation is disabled).
+ */
+function resolveCandidateSides(
+  candidate: IEaCandidateMatch,
+  eaTeamA: string | undefined,
+  eaTeamB: string | undefined
+): { teamA: IMatchTeamData; teamB: IMatchTeamData } {
+  const isDirectOrder = candidate.teamA.eaClubId === eaTeamA && candidate.teamB.eaClubId === eaTeamB;
+  const isSwappedOrder = candidate.teamA.eaClubId === eaTeamB && candidate.teamB.eaClubId === eaTeamA;
+
+  if (isSwappedOrder) {
+    return { teamA: candidate.teamB, teamB: candidate.teamA };
+  }
+
+  if (!isDirectOrder && VALIDATE_OPPONENT) {
+    throw new ServiceError('INVALID_OPPONENT', 'El partido de EA no se jugó contra el rival asignado en esta serie.');
+  }
+
+  return { teamA: candidate.teamA, teamB: candidate.teamB };
 }
 
 /** El capitan elige una partida candidata de EA para ocupar un slot vacio */
@@ -185,18 +218,7 @@ export async function selectCandidateForMatch(
   const eaTeamA = series.teamA?.eaClubId;
   const eaTeamB = series.teamB?.eaClubId;
 
-  let finalTeamA = candidate.teamA;
-  let finalTeamB = candidate.teamB;
-
-  if (candidate.teamA.eaClubId === eaTeamA && candidate.teamB.eaClubId === eaTeamB) {
-    // Orden correcto
-  } else if (candidate.teamA.eaClubId === eaTeamB && candidate.teamB.eaClubId === eaTeamA) {
-    // Voltear
-    finalTeamA = candidate.teamB;
-    finalTeamB = candidate.teamA;
-  } else {
-    throw new ServiceError('INVALID_OPPONENT', 'El partido de EA no se jugó contra el rival asignado en esta serie.');
-  }
+  const { teamA: finalTeamA, teamB: finalTeamB } = resolveCandidateSides(candidate, eaTeamA, eaTeamB);
 
   match.eaMatchId = candidate.eaMatchId;
   match.isManual = false;
@@ -303,7 +325,7 @@ export async function editMatch(
     match.effective.teamB.score = patch.teamB.score;
     match.effective.teamB.penaltiesScore = patch.teamB.penaltiesScore ?? null;
   }
-  
+
   match.edits.push({ by: requesterUserId, at: new Date(), change: changeDescription });
 
   // Al editar, se reabre la confirmacion: ambos deben volver a confirmar el nuevo resultado
@@ -326,7 +348,7 @@ export async function resolveDispute(
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
   const match = findMatch(series, position);
-  
+
   if (match.effective.teamA) {
     match.effective.teamA.score = input.teamA.score;
     match.effective.teamA.penaltiesScore = input.teamA.penaltiesScore ?? null;
@@ -335,7 +357,7 @@ export async function resolveDispute(
     match.effective.teamB.score = input.teamB.score;
     match.effective.teamB.penaltiesScore = input.teamB.penaltiesScore ?? null;
   }
-  
+
   match.edits.push({
     by: adminUserId,
     at: new Date(),
@@ -374,14 +396,14 @@ export async function listDisputes() {
 
 function recomputeMatchStatus(match: IMatchDoc): void {
   const { byTeamA, byTeamB } = match.confirmations;
-  if (!byTeamA || !byTeamB) return; // sigue pendiente hasta que confirmen los dos
+  if (!byTeamA?.userId || !byTeamB?.userId) return; // sigue pendiente hasta que confirmen los dos de verdad
 
-  const coincide = 
-    byTeamA.teamA.score === byTeamB.teamA.score && 
+  const coincide =
+    byTeamA.teamA.score === byTeamB.teamA.score &&
     byTeamA.teamA.penaltiesScore === byTeamB.teamA.penaltiesScore &&
     byTeamA.teamB.score === byTeamB.teamB.score &&
     byTeamA.teamB.penaltiesScore === byTeamB.teamB.penaltiesScore;
-    
+
   match.status = coincide ? 'confirmed' : 'disputed';
 }
 
@@ -404,7 +426,7 @@ function recomputeSeriesStatus(series: ISeriesDoc): void {
       return false;
     }
   ).length;
-  
+
   const winsB = confirmed.filter(
     (m) => {
       const scoreA = m.effective.teamA?.score ?? 0;
