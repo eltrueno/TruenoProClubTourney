@@ -86,6 +86,7 @@ const eaClubIdCooldownRemainingHours = computed(() => {
 const canChangeEaClubId = computed(() =>
   settings.value?.captainsCanChangeEaClubId !== false && eaClubIdCooldownRemainingHours.value === 0
 );
+function openEaClubIdModal() {
   eaClubIdInput.value = myTeam.value?.eaClubId ?? '';
   eaClubIdError.value = '';
   (document.getElementById('ea_modal') as HTMLDialogElement | null)?.showModal();
@@ -268,6 +269,10 @@ function formatMatchScore(teamData: any) {
   let r = teamData.score.toString();
   if (teamData.penaltiesScore != null) r += ` (${teamData.penaltiesScore})`;
   return r;
+}
+
+function closeEaModal() {
+  (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
 }
 </script>
 
@@ -469,7 +474,7 @@ function formatMatchScore(teamData: any) {
         />
         <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
         <div class="modal-action">
-          <button class="btn btn-sm btn-ghost" @click="(document.getElementById('ea_modal') as HTMLDialogElement | null)?.close()">Cancelar</button>
+          <button class="btn btn-sm btn-ghost" @click="closeEaModal()">Cancelar</button>
           <button
             class="btn btn-sm btn-primary"
             :disabled="!canChangeEaClubId || eaClubIdSaving || !eaClubIdInput.trim()"
@@ -479,7 +484,7 @@ function formatMatchScore(teamData: any) {
           </button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="(document.getElementById('ea_modal') as HTMLDialogElement | null)?.close()"></div>
+      <div class="modal-backdrop" @click="closeEaModal()"></div>
     </dialog>
 
     <!-- Modal: elegir partido de EA / manual -->
