@@ -4,6 +4,7 @@ import type {
   IMatchPlayer,
   IEaCandidateMatch,
   IMatchTeamData,
+  IMySeriesResponse,
 } from '@trueno-proclub-tourney/shared';
 import { SeriesModel, type ISeriesDoc, type IMatchDoc, type IMatchPlayerDoc, type IMatchTeamDataDoc } from '../models/Series.model.js';
 import { getTeamIdForCaptain } from './captain.service.js';
@@ -72,6 +73,17 @@ function toISeries(doc: ISeriesDoc): ISeries {
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
   };
+}
+
+/**
+ * Devuelve la serie ya lista para el panel de capitan: teamA/teamB poblados
+ * (con nombre, escudo, etc) y con mySide segun el lado que resolvio la accion.
+ */
+async function toMySeriesResponse(series: ISeriesDoc, side: 'A' | 'B'): Promise<IMySeriesResponse> {
+  if (!series.populated('teamA') || !series.populated('teamB')) {
+    await series.populate('teamA teamB');
+  }
+  return { ...toISeries(series), mySide: side };
 }
 
 export async function listSeries(teamId?: string): Promise<ISeries[]> {
@@ -343,11 +355,11 @@ export async function unselectMatch(
   seriesId: string,
   position: number,
   requesterUserId: string
-): Promise<ISeries> {
+): Promise<IMySeriesResponse> {
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
-  await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
+  const side = await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
 
   const match = findMatch(series, position);
   if (match.status !== 'pending_confirmation') {
@@ -372,7 +384,7 @@ export async function unselectMatch(
 
   recomputeSeriesStatus(series);
   await series.save();
-  return toISeries(series);
+  return toMySeriesResponse(series, side);
 }
 
 /** Edicion manual del resultado ("Algo no cuadra"): reabre la confirmacion de ambos lados */

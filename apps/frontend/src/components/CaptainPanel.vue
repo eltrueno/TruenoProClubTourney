@@ -92,13 +92,17 @@ function openEaClubIdModal() {
   (document.getElementById('ea_modal') as HTMLDialogElement | null)?.showModal();
 }
 
+function closeEaModal() {
+  (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
+}
+
 async function saveEaClubId() {
   if (!myTeam.value || !eaClubIdInput.value.trim()) return;
   eaClubIdSaving.value = true;
   eaClubIdError.value = '';
   try {
     myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
-    (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
+    closeEaModal();
   } catch (e) {
     eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
   } finally {
@@ -270,10 +274,6 @@ function formatMatchScore(teamData: any) {
   if (teamData.penaltiesScore != null) r += ` (${teamData.penaltiesScore})`;
   return r;
 }
-
-function closeEaModal() {
-  (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
-}
 </script>
 
 <template>
@@ -324,7 +324,16 @@ function closeEaModal() {
             <div class="text-xs font-bold mb-1">¡Falta EA Club ID!</div>
             <div class="text-xs">No podrás reportar partidos</div>
           </div>
-          <div class="flex flex-col items-end gap-1">
+          <div
+            class="tooltip tooltip-left"
+            :data-tip="
+              settings && !settings.captainsCanChangeEaClubId
+                ? 'Desactivado por el admin'
+                : eaClubIdCooldownRemainingHours > 0
+                  ? `Podrás cambiarlo en ${eaClubIdCooldownRemainingHours}h`
+                  : undefined
+            "
+          >
             <button
               class="btn btn-sm btn-outline ml-2"
               :disabled="!canChangeEaClubId"
@@ -332,8 +341,6 @@ function closeEaModal() {
             >
               Cambiar ID
             </button>
-            <span v-if="settings && !settings.captainsCanChangeEaClubId" class="text-xs text-warning">Desactivado por el admin</span>
-            <span v-else-if="eaClubIdCooldownRemainingHours > 0" class="text-xs opacity-50">Podrás cambiarlo en {{ eaClubIdCooldownRemainingHours }}h</span>
           </div>
         </div>
       </div>
@@ -474,7 +481,7 @@ function closeEaModal() {
         />
         <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
         <div class="modal-action">
-          <button class="btn btn-sm btn-ghost" @click="closeEaModal()">Cancelar</button>
+          <button class="btn btn-sm btn-ghost" @click="closeEaModal">Cancelar</button>
           <button
             class="btn btn-sm btn-primary"
             :disabled="!canChangeEaClubId || eaClubIdSaving || !eaClubIdInput.trim()"
@@ -484,7 +491,7 @@ function closeEaModal() {
           </button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="closeEaModal()"></div>
+      <div class="modal-backdrop" @click="closeEaModal"></div>
     </dialog>
 
     <!-- Modal: elegir partido de EA / manual -->
