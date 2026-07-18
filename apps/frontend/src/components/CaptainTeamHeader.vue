@@ -15,7 +15,7 @@ const eaClubIdError = ref('');
 
 async function loadMyTeam() {
   try {
-    myTeam.value = await api.getMyTeam();
+    myTeam.value = await api.teams.getMine();
   } catch {
     myTeam.value = null;
   } finally {
@@ -38,7 +38,7 @@ async function saveEaClubId() {
   savingEaClubId.value = true;
   eaClubIdError.value = '';
   try {
-    myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
+    myTeam.value = await api.teams.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
     eaClubIdInput.value = '';
     const modal = document.getElementById('ea_modal') as HTMLDialogElement;
     if (modal) modal.close();

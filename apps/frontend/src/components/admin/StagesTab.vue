@@ -4,8 +4,8 @@ import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
 
 const stageId = ref('');
-const { loading: seeding, error: seedError, data: seedResult, execute: seed } = useApi(api.seedGroupsStage);
-const { loading: resolving, error: resolveError, data: resolveResult, execute: resolve } = useApi(api.resolveStage);
+const { loading: seeding, error: seedError, data: seedResult, execute: seed } = useApi(api.series.admin.seedGroupsStage);
+const { loading: resolving, error: resolveError, data: resolveResult, execute: resolve } = useApi(api.series.admin.resolveStage);
 
 async function doSeed() {
   if (stageId.value) await seed(stageId.value);

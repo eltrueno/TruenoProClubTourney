@@ -10,6 +10,8 @@ const teams = ref<Record<string, ITeam>>({});
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+type TeamRef = string | ITeam | null;
+
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
@@ -22,9 +24,9 @@ onMounted(async () => {
 
   try {
     const [t, s, allTeams] = await Promise.all([
-      api.getTeamById(id),
-      api.getSeries(id),
-      api.getTeams(),
+      api.teams.getById(id),
+      api.series.getAll(id),
+      api.teams.getAll(),
     ]);
     team.value = t;
     allSeries.value = s;
@@ -40,10 +42,35 @@ const mySeries = computed(() => allSeries.value);
 const pendingSeries = computed(() => mySeries.value.filter((s) => s.status !== 'completed'));
 const playedSeries = computed(() => mySeries.value.filter((s) => s.status === 'completed'));
 
-function extractId(t: string | ITeam | null) { return typeof t === 'object' && t !== null ? t.id : t; }
-function rivalId(s: ISeries) { const idA = extractId(s.teamA); const idB = extractId(s.teamB); return idA === teamId.value ? idB : idA; }
-function rivalName(s: ISeries) { const id = rivalId(s); return id ? teams.value[id]?.name ?? '...' : 'Por determinar'; }
-function rivalBadge(s: ISeries) { const id = rivalId(s); return id ? teamBadge(teams.value[id]) : null; }
+function resolveTeam(team: TeamRef): ITeam | undefined {
+  if (!team) return undefined;
+
+  return typeof team === 'string'
+    ? teams.value[team]
+    : team;
+}
+
+function getTeamId(team: TeamRef): string | null {
+  if (!team) return null;
+  return typeof team === 'string'
+    ? team
+    : team.id;
+}
+
+function rival(s: ISeries): TeamRef {
+  return getTeamId(s.teamA) === teamId.value
+    ? s.teamB
+    : s.teamA;
+}
+
+function rivalName(s: ISeries) {
+  const team = resolveTeam(rival(s));
+  return team?.name ?? 'Por determinar';
+}
+
+function rivalBadge(s: ISeries) {
+  return teamBadge(resolveTeam(rival(s)));
+}
 
 function seriesWins(s: ISeries): [number, number] {
   const confirmed = s.matches.filter((m) => m.status === 'confirmed');
@@ -57,7 +84,10 @@ function seriesWins(s: ISeries): [number, number] {
 }
 function myScore(s: ISeries) {
   const [wA, wB] = seriesWins(s);
-  return s.teamA === teamId.value ? `${wA} – ${wB}` : `${wB} – ${wA}`;
+
+  return getTeamId(s.teamA) === teamId.value
+    ? `${wA} – ${wB}`
+    : `${wB} – ${wA}`;
 }
 </script>
 

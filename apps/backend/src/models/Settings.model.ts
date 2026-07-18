@@ -1,12 +1,11 @@
-import { Schema, model, type Document } from 'mongoose';
+import { ITournamentSettings } from '@trueno-proclub-tourney/shared';
+import { Schema, model } from 'mongoose';
 
 // Documento singleton: siempre hay como mucho uno, con _id fijo 'global'.
 const SETTINGS_ID = 'global';
 
-export interface ISettingsDoc extends Document<string> {
+export interface ISettingsDoc extends ITournamentSettings {
   _id: string;
-  captainsCanChangeEaClubId: boolean;
-  eaClubIdChangeCooldownHours: number;
 }
 
 const settingsSchema = new Schema<ISettingsDoc>({

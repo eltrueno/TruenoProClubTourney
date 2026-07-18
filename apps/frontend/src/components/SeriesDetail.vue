@@ -8,11 +8,13 @@ const teams = ref<Record<string, ITeam>>({});
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+type TeamRef = string | ITeam | null;
+
 onMounted(async () => {
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { error.value = 'Falta ?id= en la URL'; loading.value = false; return; }
   try {
-    const [s, t] = await Promise.all([api.getSeriesById(id), api.getTeams()]);
+    const [s, t] = await Promise.all([api.series.getById(id), api.teams.getAll()]);
     series.value = s;
     teams.value = Object.fromEntries(t.map((t) => [t.id, t]));
   } catch (e) {
@@ -22,18 +24,35 @@ onMounted(async () => {
   }
 });
 
-function teamName(id: string | null) {
-  if (!id) return 'Por determinar';
-  return teams.value[id]?.name ?? '...';
+function resolveTeam(team: TeamRef): ITeam | undefined {
+  if (!team) return undefined;
+
+  return typeof team === 'string'
+    ? teams.value[team]
+    : team;
 }
-function badge(id: string | null) {
-  if (!id) return null;
-  return teamBadge(teams.value[id]);
+
+function teamId(team: TeamRef): string | null {
+  if (!team) return null;
+  return typeof team === 'string'
+    ? team
+    : team.id;
 }
-function captainOf(id: string | null) {
-  if (!id) return null;
-  return teams.value[id]?.captainName ?? null;
+
+function teamName(team: TeamRef) {
+  if (!team) return 'Por determinar';
+  return resolveTeam(team)?.name ?? '...';
 }
+
+function badge(team: TeamRef) {
+  return teamBadge(resolveTeam(team));
+}
+
+function captainOf(team: TeamRef) {
+  return resolveTeam(team)?.captainName ?? null;
+}
+
+
 const totalScore = computed(() => {
   if (!series.value) return null;
   const confirmed = series.value.matches.filter((m) => m.status === 'confirmed');
@@ -52,7 +71,7 @@ const statusBadge: Record<string, string> = {
 };
 
 const posOrder: Record<string, number> = { goalkeeper: 0, defender: 1, midfielder: 2, forward: 3 };
-const posLabel: Record<string, string> = { goalkeeper: 'PO', defender: 'DEF', midfielder: 'MED', forward: 'DEL' };
+const posLabel: Record<string, string> = { goalkeeper: 'POR', defender: 'DEF', midfielder: 'MED', forward: 'DEL' };
 
 function sortedPlayers(stats: IMatchPlayer[] | undefined) {
   if (!stats) return [];
@@ -86,7 +105,7 @@ function formatScore(teamData: any) {
           <div class="flex flex-col items-center gap-2 flex-1 text-center">
             <img v-if="badge(series.teamA)" :src="badge(series.teamA)!" class="w-14 h-14 object-contain" />
             <span class="font-bold leading-tight">
-              <a v-if="series.teamA" :href="`/equipo?id=${series.teamA}`" class="hover:underline">{{ teamName(series.teamA) }}</a>
+              <a v-if="series.teamA" :href="`/equipo?id=${teamId(series.teamA)}`" class="hover:underline">{{ teamName(series.teamA) }}</a>
               <template v-else>{{ teamName(series.teamA) }}</template>
             </span>
             <span v-if="captainOf(series.teamA)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamA) }}</span>
@@ -101,7 +120,7 @@ function formatScore(teamData: any) {
             </div>
           </div>
           <div class="flex flex-col items-center gap-2 flex-1 text-center">
-            <img v-if="badge(series.teamB)" :src="badge(series.teamB)!" class="w-14 h-14 object-contain" />
+            <img v-if="badge(series.teamB)" :href="`/equipo?id=${teamId(series.teamB)}`" class="w-14 h-14 object-contain" />
             <span class="font-bold leading-tight">
               <a v-if="series.teamB" :href="`/equipo?id=${series.teamB}`" class="hover:underline">{{ teamName(series.teamB) }}</a>
               <template v-else>{{ teamName(series.teamB) }}</template>

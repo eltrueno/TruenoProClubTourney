@@ -12,10 +12,10 @@ export interface ApiErrorState {
  * la funcion de api.ts que corresponda.
  *
  * Uso:
- *   const { data: teams, loading, error, execute: loadTeams } = useApi(api.getTeams)
+ *   const { data: teams, loading, error, execute: loadTeams } = useApi(api.teams.getAll)
  *   onMounted(loadTeams)
  *
- *   const { loading: saving, error: saveError, execute: save } = useApi(api.createTeam)
+ *   const { loading: saving, error: saveError, execute: save } = useApi(api.teams.admin.create)
  *   await save({ name, countryCode })
  */
 export function useApi<T, Args extends unknown[] = []>(fn: (...args: Args) => Promise<T>) {

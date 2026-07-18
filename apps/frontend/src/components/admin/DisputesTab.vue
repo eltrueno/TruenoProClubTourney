@@ -3,8 +3,8 @@ import { onMounted, ref } from 'vue';
 import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
 
-const { data: disputes, loading, error, execute: load } = useApi(api.listDisputes);
-const { execute: resolve } = useApi(api.resolveDispute);
+const { data: disputes, loading, error, execute: load } = useApi(api.series.admin.listDisputes);
+const { execute: resolve } = useApi(api.series.admin.resolveDispute);
 onMounted(load);
 
 const scores = ref<Record<string, { a: number; b: number; penA: number | null; penB: number | null }>>({});

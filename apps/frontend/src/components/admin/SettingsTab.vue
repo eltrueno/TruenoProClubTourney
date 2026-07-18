@@ -7,7 +7,7 @@ const saving = ref(false);
 const error = ref('');
 
 onMounted(async () => {
-  settings.value = await api.getSettings();
+  settings.value = await api.settings.get();
 });
 
 async function toggleAllowed() {
@@ -15,7 +15,7 @@ async function toggleAllowed() {
   saving.value = true;
   error.value = '';
   try {
-    settings.value = await api.updateSettings({ captainsCanChangeEaClubId: !settings.value.captainsCanChangeEaClubId });
+    settings.value = await api.settings.admin.update({ captainsCanChangeEaClubId: !settings.value.captainsCanChangeEaClubId });
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error guardando';
   } finally {
@@ -28,7 +28,7 @@ async function saveCooldown() {
   saving.value = true;
   error.value = '';
   try {
-    settings.value = await api.updateSettings({ eaClubIdChangeCooldownHours: settings.value.eaClubIdChangeCooldownHours });
+    settings.value = await api.settings.admin.update({ eaClubIdChangeCooldownHours: settings.value.eaClubIdChangeCooldownHours });
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error guardando';
   } finally {

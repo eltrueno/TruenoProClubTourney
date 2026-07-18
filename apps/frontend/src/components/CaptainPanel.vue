@@ -66,7 +66,7 @@ const editDescription = ref('');
 
 async function loadMySeries() {
   try {
-    const [s, t, st] = await Promise.all([api.getMySeries(), api.getMyTeam(), api.getSettings()]);
+    const [s, t, st] = await Promise.all([api.series.getMine(), api.teams.getMine(), api.settings.get()]);
     series.value = s as import('@trueno-proclub-tourney/shared').IMySeriesResponse[];
     myTeam.value = t;
     settings.value = st;
@@ -101,7 +101,7 @@ async function saveEaClubId() {
   eaClubIdSaving.value = true;
   eaClubIdError.value = '';
   try {
-    myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
+    myTeam.value = await api.teams.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
     closeEaModal();
   } catch (e) {
     eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
@@ -138,7 +138,7 @@ async function openAddModal(seriesId: string, position: number, eaClubId: string
   manualConfirmText.value = '';
   stopManualCooldown();
   try {
-    candidates.value = await api.getEaCandidates(eaClubId);
+    candidates.value = await api.series.getEaCandidates(eaClubId);
   } catch (e) {
     candidatesLoadError.value = e instanceof Error ? e.message : 'Error buscando partidos en EA';
   } finally {
@@ -165,7 +165,7 @@ async function selectCandidate(candidate: IEaCandidateMatch) {
   const key = slotKey(seriesId, position);
   slotError.value[key] = '';
   try {
-    const updated = await api.selectCandidate(seriesId, position, candidate);
+    const updated = await api.series.selectCandidate(seriesId, position, candidate);
     updateSeries(seriesId, updated);
     closeAddModal();
   } catch (e) {
@@ -182,7 +182,7 @@ async function submitManualMatch() {
   manualSaving.value = true;
   manualError.value = '';
   try {
-    const updated = await api.createManualMatch(seriesId, position, {
+    const updated = await api.series.createManualMatch(seriesId, position, {
       teamA: { score: manualForm.value.scoreA, penaltiesScore: manualForm.value.penA },
       teamB: { score: manualForm.value.scoreB, penaltiesScore: manualForm.value.penB },
     });
@@ -200,7 +200,7 @@ async function confirm(seriesId: string, position: number) {
   confirming.value[key] = true;
   slotError.value[key] = '';
   try {
-    const updated = await api.confirmMatch(seriesId, position);
+    const updated = await api.series.confirmMatch(seriesId, position);
     updateSeries(seriesId, updated);
   } catch (e) {
     slotError.value[key] = e instanceof ApiError ? e.message : 'Error confirmando';
@@ -217,7 +217,7 @@ async function unselectMatch(seriesId: string, position: number) {
   unselecting.value[key] = true;
   slotError.value[key] = '';
   try {
-    const updated = await api.unselectMatch(seriesId, position);
+    const updated = await api.series.unselectMatch(seriesId, position);
     updateSeries(seriesId, updated);
   } catch (e) {
     slotError.value[key] = e instanceof ApiError ? e.message : 'Error quitando el partido';
@@ -243,7 +243,7 @@ async function submitEdit() {
   const key = slotKey(seriesId, position);
   slotError.value[key] = '';
   try {
-    const updated = await api.editMatch(seriesId, position, {
+    const updated = await api.series.editMatch(seriesId, position, {
       teamA: { score: scoreA, penaltiesScore: penA },
       teamB: { score: scoreB, penaltiesScore: penB },
       changeDescription: editDescription.value,

@@ -14,13 +14,13 @@ const standingsByStage = ref<Record<string, Record<string, IGroupStanding[]>>>({
 
 onMounted(async () => {
   try {
-    const [s, t] = await Promise.all([api.getSeries(), api.getTeams()]);
+    const [s, t] = await Promise.all([api.series.getAll(), api.teams.getAll()]);
     series.value = s;
     teams.value = Object.fromEntries(t.map((t) => [t.id, t]));
 
     // Cargar standings de todas las fases de grupos
     const groupStageIds = [...new Set(s.filter(x => x.stageType === 'groups').map(x => x.stageId))];
-    const results = await Promise.all(groupStageIds.map(id => api.getStandings(id).then(r => [id, r] as const)));
+    const results = await Promise.all(groupStageIds.map(id => api.series.getStandings(id).then(r => [id, r] as const)));
     standingsByStage.value = Object.fromEntries(results);
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error cargando';

@@ -3,10 +3,10 @@ import { onMounted, ref } from 'vue';
 import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
 
-const { data: teams, loading, error, execute: loadTeams } = useApi(api.getTeams);
-const { loading: creating, error: createError, execute: create } = useApi(api.createTeam);
-const { execute: assign } = useApi(api.assignCaptain);
-const { execute: unassign } = useApi(api.removeCaptain);
+const { data: teams, loading, error, execute: loadTeams } = useApi(api.teams.getAll);
+const { loading: creating, error: createError, execute: create } = useApi(api.teams.admin.create);
+const { execute: assign } = useApi(api.teams.admin.assignCaptain);
+const { execute: unassign } = useApi(api.teams.admin.removeCaptain);
 
 onMounted(loadTeams);
 
