@@ -74,8 +74,9 @@ function toISeries(doc: ISeriesDoc): ISeries {
   };
 }
 
-export async function listSeries(): Promise<ISeries[]> {
-  const docs = await SeriesModel.find().sort({ round: 1, createdAt: 1 });
+export async function listSeries(teamId?: string): Promise<ISeries[]> {
+  const filter = teamId ? { $or: [{ teamA: teamId }, { teamB: teamId }] } : {};
+  const docs = await SeriesModel.find(filter).sort({ round: 1, createdAt: 1 });
   return docs.map(toISeries);
 }
 

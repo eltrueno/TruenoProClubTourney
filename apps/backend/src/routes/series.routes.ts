@@ -4,8 +4,9 @@ import { requireAuth } from '../middleware/auth.js';
 
 export const seriesRouter = Router();
 
-// Público: bracket
+// Público: bracket + standings
 seriesRouter.get('/', seriesController.list);
+seriesRouter.get('/standings/:stageId', seriesController.getStandings);
 
 // IMPORTANTE: estas dos van ANTES de "/:id", si no Express las confunde con un id
 seriesRouter.get('/mine', requireAuth, seriesController.listMine);

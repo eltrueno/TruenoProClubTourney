@@ -31,9 +31,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   // Públicos
-  getSeries: () => apiFetch<ISeries[]>('/series'),
+  getSeries: (teamId?: string) => apiFetch<ISeries[]>(`/series${teamId ? `?teamId=${teamId}` : ''}`),
   getSeriesById: (id: string) => apiFetch<ISeries>(`/series/${id}`),
   getTeams: () => apiFetch<ITeam[]>('/teams'),
+  getTeamById: (id: string) => apiFetch<ITeam>(`/teams/${id}`),
+  getStandings: (stageId: string) => apiFetch<Record<string, import('@trueno-proclub-tourney/shared').IGroupStanding[]>>(`/series/standings/${stageId}`),
 
   // Capitán
   getMySeries: () => apiFetch<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>('/series/mine'),

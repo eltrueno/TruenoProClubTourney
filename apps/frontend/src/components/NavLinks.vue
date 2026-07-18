@@ -5,7 +5,7 @@ const { isAdmin } = useAuth();
 
 <template>
   <div class="flex gap-2">
-    <a href="/" class="btn btn-ghost btn-sm">Bracket</a>
+    <a href="/bracket" class="btn btn-ghost btn-sm">Torneo</a>
     <a href="/capitan" class="btn btn-primary btn-sm">Panel capitán</a>
     <a v-if="isAdmin" href="/admin" class="btn btn-outline btn-sm">Admin</a>
   </div>

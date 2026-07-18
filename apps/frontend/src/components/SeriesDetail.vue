@@ -85,7 +85,10 @@ function formatScore(teamData: any) {
         <div class="flex items-center justify-between gap-4">
           <div class="flex flex-col items-center gap-2 flex-1 text-center">
             <img v-if="badge(series.teamA)" :src="badge(series.teamA)!" class="w-14 h-14 object-contain" />
-            <span class="font-bold leading-tight">{{ teamName(series.teamA) }}</span>
+            <span class="font-bold leading-tight">
+              <a v-if="series.teamA" :href="`/equipo/${series.teamA}`" class="hover:underline">{{ teamName(series.teamA) }}</a>
+              <template v-else>{{ teamName(series.teamA) }}</template>
+            </span>
             <span v-if="captainOf(series.teamA)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamA) }}</span>
             <span v-if="totalScore" class="text-4xl font-black tabular-nums">{{ totalScore.A }}</span>
           </div>
@@ -99,7 +102,10 @@ function formatScore(teamData: any) {
           </div>
           <div class="flex flex-col items-center gap-2 flex-1 text-center">
             <img v-if="badge(series.teamB)" :src="badge(series.teamB)!" class="w-14 h-14 object-contain" />
-            <span class="font-bold leading-tight">{{ teamName(series.teamB) }}</span>
+            <span class="font-bold leading-tight">
+              <a v-if="series.teamB" :href="`/equipo/${series.teamB}`" class="hover:underline">{{ teamName(series.teamB) }}</a>
+              <template v-else>{{ teamName(series.teamB) }}</template>
+            </span>
             <span v-if="captainOf(series.teamB)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamB) }}</span>
             <span v-if="totalScore" class="text-4xl font-black tabular-nums">{{ totalScore.B }}</span>
           </div>

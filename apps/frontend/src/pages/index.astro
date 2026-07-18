@@ -1,10 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Bracket from '../components/Bracket.vue';
 ---
-<Layout title="Bracket">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-black">Cuadro del torneo</h1>
+<Layout title="Inicio">
+  <div class="hero py-16">
+    <div class="hero-content text-center flex-col">
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight">⚽ TruenoProClubTourney</h1>
+      <p class="py-4 opacity-60 max-w-xl">
+        El torneo de clubes pro de la comunidad. Sigue la fase de grupos, el cuadro de eliminatorias
+        y los resultados en tiempo real.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3 mt-2">
+        <a href="/bracket" class="btn btn-primary">Ver el torneo</a>
+        <a href="/capitan" class="btn btn-outline">Panel de capitán</a>
+      </div>
+    </div>
   </div>
-  <Bracket client:load />
 </Layout>

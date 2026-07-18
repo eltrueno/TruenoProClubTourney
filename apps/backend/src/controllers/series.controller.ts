@@ -3,13 +3,25 @@ import * as seriesService from '../services/series.service.js';
 import * as bracketService from '../services/bracket.service.js';
 import * as eaService from '../services/ea.service.js';
 import { loadTournamentConfig } from '../config/tournament.loader.js';
+import { computeGroupStandings } from '../services/standings.service.js';
 
 function apiError(res: Response, httpStatus: number, code: string, message: string) {
   return res.status(httpStatus).json({ status: { code, message } });
 }
 
-export async function list(_req: Request, res: Response) {
-  const series = await seriesService.listSeries();
+export async function getStandings(req: Request, res: Response) {
+  const config = await loadTournamentConfig();
+  const stage = config.stages.find((s) => s.id === req.params.stageId);
+  if (!stage || stage.type !== 'groups') {
+    return apiError(res, 404, 'NOT_FOUND', 'Fase de grupos no encontrada');
+  }
+  const standings = await computeGroupStandings(stage);
+  res.json(standings);
+}
+
+export async function list(req: Request, res: Response) {
+  const teamId = typeof req.query.teamId === 'string' ? req.query.teamId : undefined;
+  const series = await seriesService.listSeries(teamId);
   res.json(series);
 }
 
