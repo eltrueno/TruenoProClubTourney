@@ -1,10 +1,10 @@
 import type {
   ISeries,
+  IMySeriesResponse,
   IMatch,
   IMatchPlayer,
   IEaCandidateMatch,
   IMatchTeamData,
-  IMySeriesResponse,
 } from '@trueno-proclub-tourney/shared';
 import { SeriesModel, type ISeriesDoc, type IMatchDoc, type IMatchPlayerDoc, type IMatchTeamDataDoc } from '../models/Series.model.js';
 import { getTeamIdForCaptain } from './captain.service.js';
@@ -73,17 +73,6 @@ function toISeries(doc: ISeriesDoc): ISeries {
     status: doc.status,
     createdAt: doc.createdAt.toISOString(),
   };
-}
-
-/**
- * Devuelve la serie ya lista para el panel de capitan: teamA/teamB poblados
- * (con nombre, escudo, etc) y con mySide segun el lado que resolvio la accion.
- */
-async function toMySeriesResponse(series: ISeriesDoc, side: 'A' | 'B'): Promise<IMySeriesResponse> {
-  if (!series.populated('teamA') || !series.populated('teamB')) {
-    await series.populate('teamA teamB');
-  }
-  return { ...toISeries(series), mySide: side };
 }
 
 export async function listSeries(teamId?: string): Promise<ISeries[]> {
@@ -170,6 +159,20 @@ function idOf(value: any): string | null {
   return (value._id ?? value).toString();
 }
 
+/**
+ * Devuelve la serie ya lista para el panel de capitan: teamA/teamB poblados
+ * (con nombre, escudo, etc) y con mySide segun el lado que resolvio la accion.
+ * Todas las acciones del capitan (seleccionar, confirmar, editar...) deben
+ * devolver esto, nunca un ISeries pelado, o el frontend pierde el lado
+ * (mySide) y el nombre de los equipos al reemplazar la fila en su estado.
+ */
+async function toMySeriesResponse(series: ISeriesDoc, side: 'A' | 'B'): Promise<IMySeriesResponse> {
+  if (!series.populated('teamA') || !series.populated('teamB')) {
+    await series.populate('teamA teamB');
+  }
+  return { ...toISeries(series), mySide: side };
+}
+
 /** Determina si requesterUserId es capitan de teamA o teamB de esta serie */
 async function resolveSide(
   series: ISeriesDoc,
@@ -233,11 +236,11 @@ export async function selectCandidateForMatch(
   position: number,
   requesterUserId: string,
   candidate: IEaCandidateMatch
-): Promise<ISeries> {
+): Promise<IMySeriesResponse> {
   const series = await SeriesModel.findById(seriesId).populate<{ teamA: any; teamB: any }>('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
-  await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
+  const side = await resolveSide(series, requesterUserId); // valida que sea capitan de un lado
 
   if (series.usedEaMatchIds.includes(candidate.eaMatchId)) {
     throw new ServiceError('ALREADY_USED', 'Esa partida de EA ya se ha usado en otro slot');
@@ -278,7 +281,7 @@ export async function selectCandidateForMatch(
   series.usedEaMatchIds.push(candidate.eaMatchId);
 
   await series.save();
-  return toISeries(series);
+  return toMySeriesResponse(series, side);
 }
 
 /** Cuando no hay ninguna candidata valida en EA, se crea la partida 100% manual */
@@ -287,11 +290,11 @@ export async function createManualMatch(
   position: number,
   requesterUserId: string,
   input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
-): Promise<ISeries> {
+): Promise<IMySeriesResponse> {
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
-  await resolveSide(series, requesterUserId);
+  const side = await resolveSide(series, requesterUserId);
 
   const match = findMatch(series, position);
   if (match.status !== 'unselected') {
@@ -308,7 +311,7 @@ export async function createManualMatch(
   match.status = 'pending_confirmation';
 
   await series.save();
-  return toISeries(series);
+  return toMySeriesResponse(series, side);
 }
 
 /** El capitan confirma que el "effective" actual es correcto ("Todo correcto") */
@@ -316,7 +319,7 @@ export async function confirmMatch(
   seriesId: string,
   position: number,
   requesterUserId: string
-): Promise<ISeries> {
+): Promise<IMySeriesResponse> {
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
@@ -341,7 +344,7 @@ export async function confirmMatch(
   recomputeSeriesStatus(series);
 
   await series.save();
-  return toISeries(series);
+  return toMySeriesResponse(series, side);
 }
 
 /**
@@ -394,11 +397,11 @@ export async function editMatch(
   requesterUserId: string,
   patch: { teamA: { score: number; penaltiesScore?: number | null }; teamB: { score: number; penaltiesScore?: number | null } },
   changeDescription: string
-): Promise<ISeries> {
+): Promise<IMySeriesResponse> {
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
-  await resolveSide(series, requesterUserId);
+  const side = await resolveSide(series, requesterUserId);
   const match = findMatch(series, position);
 
   if (match.effective.teamA) {
@@ -418,7 +421,7 @@ export async function editMatch(
 
   recomputeSeriesStatus(series);
   await series.save();
-  return toISeries(series);
+  return toMySeriesResponse(series, side);
 }
 
 /** Solo admin: fija el resultado definitivo de un match en disputa */
