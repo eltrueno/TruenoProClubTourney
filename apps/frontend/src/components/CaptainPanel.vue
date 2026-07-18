@@ -29,6 +29,31 @@ const manualForm = ref({ scoreA: 0, scoreB: 0, penA: null as number | null, penB
 const manualSaving = ref(false);
 const manualError = ref('');
 
+// Fricción deliberada: hay que esperar antes de poder mandarlo, para forzar a
+// que de verdad se busque el partido en EA antes de rendirse y meterlo a mano.
+const MANUAL_COOLDOWN_SECONDS = 30;
+const manualCooldown = ref(0);
+const manualConfirmText = ref('');
+const MANUAL_CONFIRM_PHRASE = 'CONFIRMO SIN PRUEBAS';
+let manualCooldownTimer: ReturnType<typeof setInterval> | null = null;
+
+function startManualCooldown() {
+  manualCooldown.value = MANUAL_COOLDOWN_SECONDS;
+  if (manualCooldownTimer) clearInterval(manualCooldownTimer);
+  manualCooldownTimer = setInterval(() => {
+    manualCooldown.value -= 1;
+    if (manualCooldown.value <= 0 && manualCooldownTimer) {
+      clearInterval(manualCooldownTimer);
+      manualCooldownTimer = null;
+    }
+  }, 1000);
+}
+function stopManualCooldown() {
+  if (manualCooldownTimer) clearInterval(manualCooldownTimer);
+  manualCooldownTimer = null;
+  manualCooldown.value = 0;
+}
+
 // Modal "Algo no cuadra"
 const editingSlot = ref<{ seriesId: string; position: number; scoreA: number; scoreB: number; penA: number | null; penB: number | null } | null>(null);
 const editDescription = ref('');
@@ -70,6 +95,8 @@ async function openAddModal(seriesId: string, position: number, eaClubId: string
   manualAck.value = false;
   manualForm.value = { scoreA: 0, scoreB: 0, penA: null, penB: null };
   manualError.value = '';
+  manualConfirmText.value = '';
+  stopManualCooldown();
   try {
     candidates.value = await api.getEaCandidates(eaClubId);
   } catch (e) {
@@ -82,6 +109,14 @@ async function openAddModal(seriesId: string, position: number, eaClubId: string
 function closeAddModal() {
   addingSlot.value = null;
   manualMode.value = false;
+  stopManualCooldown();
+}
+
+/** Activa el modo manual: arranca el enfriamiento y limpia la confirmacion escrita */
+function enterManualMode() {
+  manualMode.value = true;
+  manualConfirmText.value = '';
+  startManualCooldown();
 }
 
 async function selectCandidate(candidate: IEaCandidateMatch) {
@@ -100,6 +135,8 @@ async function selectCandidate(candidate: IEaCandidateMatch) {
 
 async function submitManualMatch() {
   if (!addingSlot.value || !manualAck.value) return;
+  if (manualCooldown.value > 0) return;
+  if (manualConfirmText.value.trim().toUpperCase() !== MANUAL_CONFIRM_PHRASE) return;
   const { seriesId, position } = addingSlot.value;
   const key = slotKey(seriesId, position);
   manualSaving.value = true;
@@ -336,7 +373,7 @@ function formatMatchScore(teamData: any) {
 
     <!-- Modal: elegir partido de EA / manual -->
     <dialog v-if="addingSlot" class="modal modal-open">
-      <div class="modal-box max-w-lg">
+      <div class="modal-box max-w-lg max-h-[85vh] overflow-y-auto">
         <h3 class="font-bold text-lg mb-4">{{ manualMode ? 'Añadir partido a mano' : 'Selecciona el partido' }}</h3>
 
         <!-- Vista de candidatos de EA -->
@@ -349,7 +386,7 @@ function formatMatchScore(teamData: any) {
             <div v-if="candidates.length === 0" class="opacity-50 text-sm text-center py-4">
               No se encontraron partidos recientes en EA.
             </div>
-            <div v-else class="space-y-2 max-h-96 overflow-y-auto pr-2">
+            <div v-else class="space-y-2 max-h-72 overflow-y-auto pr-2">
               <div
                 v-for="c in candidates"
                 :key="c.eaMatchId"
@@ -400,7 +437,7 @@ function formatMatchScore(teamData: any) {
           </template>
 
           <div class="divider text-xs opacity-50 my-4">o si no aparece</div>
-          <button class="btn btn-sm btn-outline btn-warning w-full" @click="manualMode = true">
+          <button class="btn btn-sm btn-outline btn-warning w-full" @click="enterManualMode">
             No está el partido, añadirlo a mano
           </button>
         </template>
@@ -434,11 +471,31 @@ function formatMatchScore(teamData: any) {
             <span class="label-text text-sm">He esperado, he recargado y el partido sigue sin aparecer. Entiendo que este resultado no tiene prueba automática.</span>
           </label>
 
+          <div v-if="manualCooldown > 0" class="alert alert-info text-sm mt-3 py-2">
+            Espera {{ manualCooldown }}s antes de poder enviarlo — dale tiempo a EA a publicar el partido.
+          </div>
+
+          <div class="mt-3">
+            <label class="label-text text-xs opacity-70 mb-1 block">
+              Escribe exactamente <span class="font-mono font-bold">{{ MANUAL_CONFIRM_PHRASE }}</span> para confirmar:
+            </label>
+            <input
+              v-model="manualConfirmText"
+              type="text"
+              class="input input-bordered input-sm w-full font-mono"
+              :placeholder="MANUAL_CONFIRM_PHRASE"
+            />
+          </div>
+
           <p v-if="manualError" class="text-error text-xs mt-2">{{ manualError }}</p>
 
           <div class="modal-action">
-            <button class="btn btn-ghost btn-sm" @click="manualMode = false">Volver a buscar en EA</button>
-            <button class="btn btn-warning btn-sm" :disabled="!manualAck || manualSaving" @click="submitManualMatch">
+            <button class="btn btn-ghost btn-sm" @click="manualMode = false; stopManualCooldown()">Volver a buscar en EA</button>
+            <button
+              class="btn btn-warning btn-sm"
+              :disabled="!manualAck || manualSaving || manualCooldown > 0 || manualConfirmText.trim().toUpperCase() !== MANUAL_CONFIRM_PHRASE"
+              @click="submitManualMatch"
+            >
               {{ manualSaving ? 'Guardando...' : 'Guardar resultado manual' }}
             </button>
           </div>

@@ -31,15 +31,29 @@ onMounted(async () => {
 
 // ── cómputos ─────────────────────────────────────────────────────────────────
 const stages = computed(() => {
-  const map = new Map<string, { stageId: string; stageType: string; stageName?: string; rounds: Map<string, ISeries[]> }>();
+  const map = new Map<string, { stageId: string; stageType: string; roundsMap: Map<string, ISeries[]> }>();
   for (const s of series.value) {
-    if (!map.has(s.stageId)) map.set(s.stageId, { stageId: s.stageId, stageType: s.stageType, rounds: new Map() });
+    if (!map.has(s.stageId)) map.set(s.stageId, { stageId: s.stageId, stageType: s.stageType, roundsMap: new Map() });
     const stage = map.get(s.stageId)!;
-    if (!stage.rounds.has(s.round)) stage.rounds.set(s.round, []);
-    stage.rounds.get(s.round)!.push(s);
+    if (!stage.roundsMap.has(s.round)) stage.roundsMap.set(s.round, []);
+    stage.roundsMap.get(s.round)!.push(s);
   }
-  return Array.from(map.values());
+  return Array.from(map.values()).map((stage) => ({
+    stageId: stage.stageId,
+    stageType: stage.stageType,
+    // Orden de ronda: mas partidos = ronda mas temprana (octavos > cuartos > semis > final).
+    // No hay campo de "orden de ronda" fiable en los datos, asi que este es el heuristico correcto para un bracket de eliminacion simple.
+    rounds: Array.from(stage.roundsMap.entries())
+      .map(([name, matches]) => ({ name, matches }))
+      .sort((a, b) => b.matches.length - a.matches.length || a.name.localeCompare(b.name)),
+  }));
 });
+
+/** Alto total del bracket: cada slot de la primera ronda ocupa MATCH_SLOT px, y el resto de rondas se centran dentro con justify-around */
+const MATCH_SLOT = 100;
+function bracketHeight(stage: { rounds: { matches: ISeries[] }[] }) {
+  return (stage.rounds[0]?.matches.length ?? 1) * MATCH_SLOT;
+}
 
 const activeTab = ref<string | null>(null);
 onMounted(() => {
@@ -47,9 +61,17 @@ onMounted(() => {
 });
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-function team(id: string | null): ITeam | undefined { return id ? teams.value[id] : undefined; }
-function teamName(id: string | null) { return team(id)?.name ?? 'Por determinar'; }
-function badge(id: string | null) { return teamBadge(team(id)); }
+/** series.teamA/teamB pueden venir como id plano o como ITeam poblado, segun el endpoint */
+function idOf(value: string | ITeam | null): string | null {
+  if (!value) return null;
+  return typeof value === 'string' ? value : value.id;
+}
+function team(id: string | ITeam | null): ITeam | undefined {
+  const tid = idOf(id);
+  return tid ? teams.value[tid] : undefined;
+}
+function teamName(id: string | ITeam | null) { return team(id)?.name ?? 'Por determinar'; }
+function badge(id: string | ITeam | null) { return teamBadge(team(id)); }
 
 /** Victorias en la serie por equipo */
 function seriesWins(s: ISeries): [number, number] {
@@ -160,9 +182,9 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
 
               <!-- Partidos del grupo -->
               <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                <template v-for="[, items] in stage.rounds" :key="'r'">
+                <template v-for="round in stage.rounds" :key="round.name">
                   <a
-                    v-for="s in items.filter(s => rows.some(r => r.teamId === s.teamA || r.teamId === s.teamB))"
+                    v-for="s in round.matches.filter(s => rows.some(r => r.teamId === idOf(s.teamA) || r.teamId === idOf(s.teamB)))"
                     :key="s.id"
                     :href="`/series?id=${s.id}`"
                     class="flex items-center gap-3 bg-base-100 hover:bg-base-200 transition-colors border border-base-300 rounded-xl px-4 py-3 group"
@@ -199,25 +221,28 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
 
           <!-- ══ ELIMINATORIAS ═══════════════════════════════════════════════ -->
           <div v-else-if="stage.stageType === 'knockout'" class="overflow-x-auto pb-4">
-            <div class="flex gap-6 min-w-max">
-              <div
-                v-for="[roundName, items] in stage.rounds" :key="roundName"
-                class="flex flex-col gap-3"
-              >
-                <h3 class="text-xs font-black uppercase tracking-widest text-center opacity-40 pb-1 border-b border-base-300">{{ roundName }}</h3>
-                <!-- Espaciado visual tipo bracket: los partidos se separan más en rondas avanzadas -->
-                <div class="flex flex-col" :style="{ gap: `${Math.max(1, Math.ceil(stage.rounds.size / 2)) * 0.5}rem` }">
+            <!-- Encabezados de ronda -->
+            <div class="flex min-w-max mb-3">
+              <template v-for="(round, ri) in stage.rounds" :key="'h-' + round.name">
+                <h3 class="w-56 shrink-0 text-center text-xs font-black uppercase tracking-widest opacity-40">{{ round.name }}</h3>
+                <div v-if="ri < stage.rounds.length - 1" class="w-10 shrink-0"></div>
+              </template>
+            </div>
+
+            <!-- Bracket: cada columna se estira a la misma altura y usa justify-around,
+                 lo que produce automaticamente el doble espaciado clasico de un bracket
+                 (mitad de partidos = doble de hueco) sin tener que calcular posiciones a mano. -->
+            <div class="flex min-w-max" :style="{ height: bracketHeight(stage) + 'px' }">
+              <template v-for="(round, ri) in stage.rounds" :key="round.name">
+                <div class="flex flex-col justify-around w-56 shrink-0">
                   <a
-                    v-for="s in items" :key="s.id"
+                    v-for="s in round.matches" :key="s.id"
                     :href="`/series?id=${s.id}`"
-                    class="block w-52 rounded-xl border border-base-300 bg-base-100 hover:border-primary hover:shadow-md transition-all overflow-hidden group"
+                    class="block rounded-xl border border-base-300 bg-base-100 hover:border-primary hover:shadow-md transition-all overflow-hidden"
                     :class="s.status === 'completed' ? 'border-success/30' : s.status === 'in_progress' ? 'border-warning/50' : ''"
                   >
                     <!-- Equipo A -->
-                    <div
-                      class="flex items-center gap-2 px-3 py-2 border-b border-base-300"
-                      :class="isWinner(s, 'A') ? 'bg-success/10' : ''"
-                    >
+                    <div class="flex items-center gap-2 px-3 py-2 border-b border-base-300" :class="isWinner(s, 'A') ? 'bg-success/10' : ''">
                       <img v-if="badge(s.teamA)" :src="badge(s.teamA)!" class="w-5 h-5 object-contain shrink-0" />
                       <div v-else class="w-5 h-5 rounded bg-base-300 shrink-0"></div>
                       <span class="flex-1 truncate text-sm" :class="isWinner(s, 'A') ? 'font-black' : isWinner(s, 'B') ? 'opacity-40' : 'font-medium'">
@@ -228,10 +253,7 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
                       </span>
                     </div>
                     <!-- Equipo B -->
-                    <div
-                      class="flex items-center gap-2 px-3 py-2"
-                      :class="isWinner(s, 'B') ? 'bg-success/10' : ''"
-                    >
+                    <div class="flex items-center gap-2 px-3 py-2" :class="isWinner(s, 'B') ? 'bg-success/10' : ''">
                       <img v-if="badge(s.teamB)" :src="badge(s.teamB)!" class="w-5 h-5 object-contain shrink-0" />
                       <div v-else class="w-5 h-5 rounded bg-base-300 shrink-0"></div>
                       <span class="flex-1 truncate text-sm" :class="isWinner(s, 'B') ? 'font-black' : isWinner(s, 'A') ? 'opacity-40' : 'font-medium'">
@@ -243,7 +265,15 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
                     </div>
                   </a>
                 </div>
-              </div>
+
+                <!-- Columna de conectores hacia la siguiente ronda (codo ⌐ / L invertida) -->
+                <div v-if="ri < stage.rounds.length - 1" class="flex flex-col justify-around w-10 shrink-0">
+                  <div v-for="p in Math.ceil(round.matches.length / 2)" :key="p" class="flex-1 flex flex-col justify-center">
+                    <div class="h-1/2 border-t-2 border-r-2 border-base-300 rounded-tr-md"></div>
+                    <div class="h-1/2 border-b-2 border-r-2 border-base-300 rounded-br-md"></div>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 

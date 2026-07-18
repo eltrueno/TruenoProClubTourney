@@ -40,7 +40,8 @@ const mySeries = computed(() => allSeries.value);
 const pendingSeries = computed(() => mySeries.value.filter((s) => s.status !== 'completed'));
 const playedSeries = computed(() => mySeries.value.filter((s) => s.status === 'completed'));
 
-function rivalId(s: ISeries) { return s.teamA === teamId.value ? s.teamB : s.teamA; }
+function extractId(t: string | ITeam | null) { return typeof t === 'object' && t !== null ? t.id : t; }
+function rivalId(s: ISeries) { const idA = extractId(s.teamA); const idB = extractId(s.teamB); return idA === teamId.value ? idB : idA; }
 function rivalName(s: ISeries) { const id = rivalId(s); return id ? teams.value[id]?.name ?? '...' : 'Por determinar'; }
 function rivalBadge(s: ISeries) { const id = rivalId(s); return id ? teamBadge(teams.value[id]) : null; }
 
