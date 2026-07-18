@@ -4,9 +4,10 @@ import { useAuth } from '@/composables/useAuth';
 import TeamsTab from './TeamsTab.vue';
 import StagesTab from './StagesTab.vue';
 import DisputesTab from './DisputesTab.vue';
+import SettingsTab from './SettingsTab.vue';
 
 const { isLoggedIn, isAdmin, isPending, loginWithTwitchPopup } = useAuth();
-const tab = ref<'teams' | 'stages' | 'disputes'>('teams');
+const tab = ref<'teams' | 'stages' | 'disputes' | 'settings'>('teams');
 </script>
 
 <template>
@@ -32,10 +33,12 @@ const tab = ref<'teams' | 'stages' | 'disputes'>('teams');
       <a role="tab" class="tab" :class="{ 'tab-active': tab === 'teams' }" @click="tab = 'teams'">Equipos</a>
       <a role="tab" class="tab" :class="{ 'tab-active': tab === 'stages' }" @click="tab = 'stages'">Fases</a>
       <a role="tab" class="tab" :class="{ 'tab-active': tab === 'disputes' }" @click="tab = 'disputes'">Disputas</a>
+      <a role="tab" class="tab" :class="{ 'tab-active': tab === 'settings' }" @click="tab = 'settings'">Ajustes</a>
     </div>
 
     <TeamsTab v-if="tab === 'teams'" />
     <StagesTab v-else-if="tab === 'stages'" />
     <DisputesTab v-else-if="tab === 'disputes'" />
+    <SettingsTab v-else-if="tab === 'settings'" />
   </div>
 </template>

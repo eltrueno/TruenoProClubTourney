@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller.js';
+import * as settingsController from '../controllers/settings.controller.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 export const adminRouter = Router();
@@ -11,3 +12,4 @@ adminRouter.post('/series/:id/matches/:position/resolve', adminController.resolv
 adminRouter.post('/series', adminController.createSeries);
 adminRouter.post('/stages/:stageId/resolve', adminController.resolveStage);
 adminRouter.post('/stages/:stageId/seed', adminController.seedGroupsStage);
+adminRouter.patch('/settings', settingsController.updateSettings);

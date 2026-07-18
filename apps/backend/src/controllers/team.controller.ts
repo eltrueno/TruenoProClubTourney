@@ -65,6 +65,13 @@ export async function setEaClubId(req: Request, res: Response) {
     if (err instanceof Error && err.message === 'FORBIDDEN') {
       return apiError(res, 403, 'FORBIDDEN', 'No eres capitán de este equipo');
     }
+    if (err instanceof Error && err.message === 'EA_CLUB_ID_CHANGES_DISABLED') {
+      return apiError(res, 403, 'EA_CLUB_ID_CHANGES_DISABLED', 'El admin ha desactivado que los capitanes cambien el EA Club ID ahora mismo');
+    }
+    if (err instanceof Error && err.message.startsWith('EA_CLUB_ID_COOLDOWN:')) {
+      const remainingHours = err.message.split(':')[1];
+      return apiError(res, 429, 'EA_CLUB_ID_COOLDOWN', `Solo puedes cambiar el EA Club ID una vez cada cierto tiempo. Vuelve a intentarlo en ${remainingHours}h`);
+    }
     throw err;
   }
 }

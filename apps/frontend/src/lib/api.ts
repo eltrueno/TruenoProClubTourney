@@ -74,6 +74,10 @@ export const api = {
       body: JSON.stringify({ eaClubId }),
     }),
 
+  // Público: settings del torneo
+  getSettings: () =>
+    apiFetch<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number }>('/settings'),
+
   // Admin: equipos
   createTeam: (body: { name: string; countryCode?: string; logoUrl?: string; group?: string }) =>
     apiFetch<ITeam>('/teams', { method: 'POST', body: JSON.stringify(body) }),
@@ -83,6 +87,11 @@ export const api = {
     apiFetch(`/teams/${teamId}/captain`, { method: 'POST', body: JSON.stringify({ userId }) }),
   removeCaptain: (teamId: string) =>
     apiFetch(`/teams/${teamId}/captain`, { method: 'DELETE' }),
+  updateSettings: (body: Partial<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number }>) =>
+    apiFetch<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number }>('/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   // Admin: fases y disputas
   listDisputes: () => apiFetch<any[]>('/admin/disputes'),

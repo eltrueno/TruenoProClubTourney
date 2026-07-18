@@ -7,6 +7,7 @@ import { teamRouter } from './routes/team.routes.js';
 import { seriesRouter } from './routes/series.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { playerStatsRouter } from './routes/playerStats.routes.js';
+import { settingsRouter } from './routes/settings.routes.js';
 
 
 
@@ -40,6 +41,7 @@ async function main() {
   app.use('/series', seriesRouter);
   app.use('/admin', adminRouter);
   app.use('/playerstats', playerStatsRouter);
+  app.use('/settings', settingsRouter);
 
   /*INDEX*/
   app.get("/", async function (req, res) {
@@ -72,6 +74,10 @@ async function main() {
         "/playerstats": [
           { "GET /": "Ranking agregado de estadísticas de todos los jugadores" },
           { "GET /:eaPlayerId": "Perfil completo e historial de partidos de un jugador" }
+        ],
+        "/settings": [
+          { "GET /": "Obtener configuración del torneo" },
+          { "PATCH /": "Actualizar configuración (Admin)" }
         ]
       }
     });

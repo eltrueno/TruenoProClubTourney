@@ -3,6 +3,7 @@ import { TeamModel, type ITeamDoc } from '../models/Team.model.js';
 import { CaptainModel } from '../models/Captain.model.js';
 import * as eaService from './ea.service.js';
 import { getPublicUserName } from './authUser.service.js';
+import { getSettings } from './settings.service.js';
 
 function toITeam(doc: ITeamDoc): ITeam {
   return {
@@ -91,6 +92,21 @@ export async function setEaClubId(
   const captain = await CaptainModel.findOne({ teamId });
   if (!captain || captain.userId !== requesterUserId) {
     throw new Error('FORBIDDEN');
+  }
+
+  const settings = await getSettings();
+  if (!settings.captainsCanChangeEaClubId) {
+    throw new Error('EA_CLUB_ID_CHANGES_DISABLED');
+  }
+
+  const currentTeam = await TeamModel.findById(teamId);
+  if (currentTeam?.eaClubIdSetAt) {
+    const cooldownMs = settings.eaClubIdChangeCooldownHours * 60 * 60 * 1000;
+    const elapsedMs = Date.now() - currentTeam.eaClubIdSetAt.getTime();
+    if (elapsedMs < cooldownMs) {
+      const remainingHours = Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000));
+      throw new Error(`EA_CLUB_ID_COOLDOWN:${remainingHours}`);
+    }
   }
 
   // Resolvemos el nombre del club contra la API de EA. Si falla (ID invalido,

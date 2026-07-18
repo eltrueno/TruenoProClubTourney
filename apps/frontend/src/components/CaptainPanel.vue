@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge, ApiError } from '@/lib/api';
 import { useAuth } from '@/composables/useAuth';
@@ -10,6 +10,12 @@ const loading = ref(true);
 const globalError = ref<string | null>(null);
 
 const myTeam = ref<ITeam | null>(null);
+const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number } | null>(null);
+
+// Modal "Cambiar EA Club ID"
+const eaClubIdInput = ref('');
+const eaClubIdError = ref('');
+const eaClubIdSaving = ref(false);
 
 // Estados por slot
 const confirming = ref<Record<string, boolean>>({});
@@ -60,13 +66,42 @@ const editDescription = ref('');
 
 async function loadMySeries() {
   try {
-    const [s, t] = await Promise.all([api.getMySeries(), api.getMyTeam()]);
+    const [s, t, st] = await Promise.all([api.getMySeries(), api.getMyTeam(), api.getSettings()]);
     series.value = s as import('@trueno-proclub-tourney/shared').IMySeriesResponse[];
     myTeam.value = t;
+    settings.value = st;
   } catch (e) {
     globalError.value = e instanceof Error ? e.message : 'Error cargando tus partidos';
   } finally {
     loading.value = false;
+  }
+}
+
+const eaClubIdCooldownRemainingHours = computed(() => {
+  if (!myTeam.value?.eaClubIdSetAt || !settings.value) return 0;
+  const cooldownMs = settings.value.eaClubIdChangeCooldownHours * 60 * 60 * 1000;
+  const elapsedMs = Date.now() - new Date(myTeam.value.eaClubIdSetAt).getTime();
+  return Math.max(0, Math.ceil((cooldownMs - elapsedMs) / (60 * 60 * 1000)));
+});
+const canChangeEaClubId = computed(() =>
+  settings.value?.captainsCanChangeEaClubId !== false && eaClubIdCooldownRemainingHours.value === 0
+);
+  eaClubIdInput.value = myTeam.value?.eaClubId ?? '';
+  eaClubIdError.value = '';
+  (document.getElementById('ea_modal') as HTMLDialogElement | null)?.showModal();
+}
+
+async function saveEaClubId() {
+  if (!myTeam.value || !eaClubIdInput.value.trim()) return;
+  eaClubIdSaving.value = true;
+  eaClubIdError.value = '';
+  try {
+    myTeam.value = await api.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
+    (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
+  } catch (e) {
+    eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
+  } finally {
+    eaClubIdSaving.value = false;
   }
 }
 
@@ -257,13 +292,54 @@ function formatMatchScore(teamData: any) {
     <!-- Error global -->
     <div v-else-if="globalError" class="alert alert-error">{{ globalError }}</div>
 
-    <!-- Sin partidos -->
-    <div v-else-if="series.length === 0" class="text-center py-12 opacity-50">
-      No tienes partidos pendientes ahora mismo.
-    </div>
+    <template v-else>
+      <!-- Cabecera de equipo: fuera de los partidos, se ve siempre que tengas equipo asignado -->
+      <div v-if="myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="avatar">
+            <div class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm">
+              <span v-if="!teamBadge(myTeam)">{{ myTeam.name.charAt(0) }}</span>
+              <img v-else :src="teamBadge(myTeam)!" class="object-contain" />
+            </div>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>
+            <p class="text-xs opacity-60">Capitán: {{ user?.name }}</p>
+          </div>
+        </div>
 
-    <!-- Panel -->
-    <div v-else class="space-y-6">
+        <!-- Configuración de EA Club ID -->
+        <div class="flex items-center gap-2">
+          <div v-if="myTeam.eaClubId" class="text-right">
+            <div class="text-xs opacity-60 mb-1">Club EA configurado</div>
+            <div class="font-bold text-sm">{{ myTeam.eaClubName ?? '(nombre no disponible)' }}</div>
+            <div class="font-mono text-xs opacity-60 bg-base-300 px-2 py-0.5 rounded inline-block mt-0.5">ID {{ myTeam.eaClubId }}</div>
+          </div>
+          <div v-else class="text-right text-warning">
+            <div class="text-xs font-bold mb-1">¡Falta EA Club ID!</div>
+            <div class="text-xs">No podrás reportar partidos</div>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <button
+              class="btn btn-sm btn-outline ml-2"
+              :disabled="!canChangeEaClubId"
+              @click="openEaClubIdModal"
+            >
+              Cambiar ID
+            </button>
+            <span v-if="settings && !settings.captainsCanChangeEaClubId" class="text-xs text-warning">Desactivado por el admin</span>
+            <span v-else-if="eaClubIdCooldownRemainingHours > 0" class="text-xs opacity-50">Podrás cambiarlo en {{ eaClubIdCooldownRemainingHours }}h</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sin partidos -->
+      <div v-if="series.length === 0" class="text-center py-12 opacity-50">
+        No tienes partidos pendientes ahora mismo.
+      </div>
+
+      <!-- Panel -->
+      <div v-else class="space-y-6">
       <div v-for="s in series" :key="s.id" class="card bg-base-100 shadow">
         <div class="card-body">
           <!-- Cabecera de la serie -->
@@ -370,10 +446,45 @@ function formatMatchScore(teamData: any) {
         </div>
       </div>
     </div>
+    </template>
+
+    <!-- Modal: cambiar EA Club ID -->
+    <dialog id="ea_modal" class="modal">
+      <div class="modal-box max-w-sm">
+        <h3 class="font-bold text-lg mb-2">EA Club ID de tu equipo</h3>
+        <p class="text-xs opacity-60 mb-3">
+          Es el ID numérico de tu club en EA FC, el que aparece en la URL del club en el companion app.
+        </p>
+        <div v-if="settings && !settings.captainsCanChangeEaClubId" class="alert alert-warning text-sm mb-3">
+          El admin ha desactivado temporalmente los cambios de EA Club ID.
+        </div>
+        <div v-else-if="eaClubIdCooldownRemainingHours > 0" class="alert alert-warning text-sm mb-3">
+          Ya cambiaste el ID hace poco. Podrás volver a cambiarlo en {{ eaClubIdCooldownRemainingHours }}h.
+        </div>
+        <input
+          v-model="eaClubIdInput"
+          placeholder="Ej: 1234567"
+          class="input input-bordered w-full mb-2"
+          :disabled="!canChangeEaClubId"
+        />
+        <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
+        <div class="modal-action">
+          <button class="btn btn-sm btn-ghost" @click="(document.getElementById('ea_modal') as HTMLDialogElement | null)?.close()">Cancelar</button>
+          <button
+            class="btn btn-sm btn-primary"
+            :disabled="!canChangeEaClubId || eaClubIdSaving || !eaClubIdInput.trim()"
+            @click="saveEaClubId"
+          >
+            {{ eaClubIdSaving ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="(document.getElementById('ea_modal') as HTMLDialogElement | null)?.close()"></div>
+    </dialog>
 
     <!-- Modal: elegir partido de EA / manual -->
     <dialog v-if="addingSlot" class="modal modal-open">
-      <div class="modal-box max-w-lg max-h-[85vh] overflow-y-auto">
+      <div class="modal-box max-w-lg max-h-[85vh] overflow-y-auto overflow-x-hidden">
         <h3 class="font-bold text-lg mb-4">{{ manualMode ? 'Añadir partido a mano' : 'Selecciona el partido' }}</h3>
 
         <!-- Vista de candidatos de EA -->
@@ -466,9 +577,9 @@ function formatMatchScore(teamData: any) {
             </div>
           </div>
 
-          <label class="label cursor-pointer justify-start gap-2 mt-2">
-            <input type="checkbox" v-model="manualAck" class="checkbox checkbox-sm checkbox-warning" />
-            <span class="label-text text-sm">He esperado, he recargado y el partido sigue sin aparecer. Entiendo que este resultado no tiene prueba automática.</span>
+          <label class="label cursor-pointer justify-start items-start gap-2 mt-2">
+            <input type="checkbox" v-model="manualAck" class="checkbox checkbox-sm checkbox-warning mt-0.5 shrink-0" />
+            <span class="label-text text-sm flex-1 min-w-0 whitespace-normal">He esperado, he recargado y el partido sigue sin aparecer. Entiendo que este resultado no tiene prueba automática.</span>
           </label>
 
           <div v-if="manualCooldown > 0" class="alert alert-info text-sm mt-3 py-2">
