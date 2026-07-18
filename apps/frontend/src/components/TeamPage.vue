@@ -3,8 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 
-const props = defineProps<{ teamId: string }>();
-
+const teamId = ref<string | null>(null);
 const team = ref<ITeam | null>(null);
 const allSeries = ref<ISeries[]>([]);
 const teams = ref<Record<string, ITeam>>({});
@@ -12,10 +11,19 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 
 onMounted(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (!id) {
+    error.value = 'Falta el id del equipo en la URL (?id=...)';
+    loading.value = false;
+    return;
+  }
+  teamId.value = id;
+
   try {
     const [t, s, allTeams] = await Promise.all([
-      api.getTeamById(props.teamId),
-      api.getSeries(props.teamId),
+      api.getTeamById(id),
+      api.getSeries(id),
       api.getTeams(),
     ]);
     team.value = t;
@@ -32,11 +40,7 @@ const mySeries = computed(() => allSeries.value);
 const pendingSeries = computed(() => mySeries.value.filter((s) => s.status !== 'completed'));
 const playedSeries = computed(() => mySeries.value.filter((s) => s.status === 'completed'));
 
-function rivalId(s: ISeries) {
-  const a = typeof s.teamA === 'string' ? s.teamA : s.teamA?.id;
-  const b = typeof s.teamB === 'string' ? s.teamB : s.teamB?.id;
-  return a === props.teamId ? b : a;
-}
+function rivalId(s: ISeries) { return s.teamA === teamId.value ? s.teamB : s.teamA; }
 function rivalName(s: ISeries) { const id = rivalId(s); return id ? teams.value[id]?.name ?? '...' : 'Por determinar'; }
 function rivalBadge(s: ISeries) { const id = rivalId(s); return id ? teamBadge(teams.value[id]) : null; }
 
@@ -52,7 +56,7 @@ function seriesWins(s: ISeries): [number, number] {
 }
 function myScore(s: ISeries) {
   const [wA, wB] = seriesWins(s);
-  return s.teamA === props.teamId ? `${wA} – ${wB}` : `${wB} – ${wA}`;
+  return s.teamA === teamId.value ? `${wA} – ${wB}` : `${wB} – ${wA}`;
 }
 </script>
 

@@ -1,8 +1,0 @@
----
-import Layout from '../../layouts/Layout.astro';
-import TeamPage from '../../components/TeamPage.vue';
-const { id } = Astro.params;
----
-<Layout title="Equipo">
-  <TeamPage :teamId={id} client:load />
-</Layout>

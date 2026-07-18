@@ -140,7 +140,7 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
                             class="w-7 h-7 object-contain rounded-sm shrink-0"
                           />
                           <div v-else class="w-7 h-7 rounded bg-base-300 shrink-0"></div>
-                          <span class="font-semibold truncate">{{ teamName(row.teamId) }}</span>
+                          <a :href="`/equipo?id=${row.teamId}`" class="font-semibold truncate hover:underline">{{ teamName(row.teamId) }}</a>
                           <span v-if="teams[row.teamId]?.captainName" class="text-xs opacity-40 hidden sm:inline">
                             {{ teams[row.teamId].captainName }}
                           </span>
