@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { api } from '@/lib/api';
+import { translateApiError } from '@/i18n/translations';
 
 const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number } | null>(null);
 const saving = ref(false);
@@ -17,7 +18,7 @@ async function toggleAllowed() {
   try {
     settings.value = await api.settings.admin.update({ captainsCanChangeEaClubId: !settings.value.captainsCanChangeEaClubId });
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Error guardando';
+    error.value = translateApiError(e);
   } finally {
     saving.value = false;
   }
@@ -30,7 +31,7 @@ async function saveCooldown() {
   try {
     settings.value = await api.settings.admin.update({ eaClubIdChangeCooldownHours: settings.value.eaClubIdChangeCooldownHours });
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Error guardando';
+    error.value = translateApiError(e);
   } finally {
     saving.value = false;
   }

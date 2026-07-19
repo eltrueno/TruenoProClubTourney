@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import type { ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '@/lib/api';
+import { translateApiError } from '@/i18n/translations';
 import { useAuth } from '@/composables/useAuth';
 
 const { isLoggedIn, isPending, user } = useAuth();
@@ -43,7 +44,7 @@ async function saveEaClubId() {
     const modal = document.getElementById('ea_modal') as HTMLDialogElement;
     if (modal) modal.close();
   } catch (e) {
-    eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
+    eaClubIdError.value = translateApiError(e);
   } finally {
     savingEaClubId.value = false;
   }

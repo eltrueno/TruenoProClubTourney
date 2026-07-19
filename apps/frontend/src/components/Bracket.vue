@@ -2,6 +2,8 @@
 import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam, IGroupStanding } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge, flagUrl } from '../lib/api';
+import { translateApiError } from '../i18n/translations';
+import AppError from './Error.vue';
 
 // ── datos ────────────────────────────────────────────────────────────────────
 const series   = ref<ISeries[]>([]);
@@ -23,7 +25,7 @@ onMounted(async () => {
     const results = await Promise.all(groupStageIds.map(id => api.series.getStandings(id).then(r => [id, r] as const)));
     standingsByStage.value = Object.fromEntries(results);
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Error cargando';
+    error.value = translateApiError(e);
   } finally {
     loading.value = false;
   }
@@ -102,7 +104,7 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
     <div v-if="loading" class="flex justify-center py-20">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
-    <div v-else-if="error" class="alert alert-error">{{ error }}</div>
+    <AppError v-else-if="error" :error="error" />
     <div v-else-if="!stages.length" class="text-center py-20 opacity-40">El torneo aún no ha comenzado.</div>
 
     <div v-else>

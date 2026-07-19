@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
+import AppError from '@/components/Error.vue';
+import { translateApiError } from '@/i18n/translations';
 
 const { data: teams, loading, error, execute: loadTeams } = useApi(api.teams.getAll);
 const { loading: creating, error: createError, execute: create } = useApi(api.teams.admin.create);
@@ -75,7 +77,7 @@ function formatDate(iso?: string) {
 
     <!-- Listado -->
     <div v-if="loading" class="flex justify-center py-8"><span class="loading loading-spinner"></span></div>
-    <div v-else-if="error" class="alert alert-error">{{ error.message }}</div>
+    <AppError v-else-if="error" :error="translateApiError(error)" />
     <div v-else class="space-y-3">
       <div v-for="team in teams" :key="team.id" class="card bg-base-100 shadow-sm">
         <div class="card-body py-4 px-4 gap-3">

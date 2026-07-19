@@ -2,6 +2,8 @@
 import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
+import { translateApiError } from '../i18n/translations';
+import AppError from './Error.vue';
 
 const teamId = ref<string | null>(null);
 const team = ref<ITeam | null>(null);
@@ -32,7 +34,7 @@ onMounted(async () => {
     allSeries.value = s;
     teams.value = Object.fromEntries(allTeams.map((x) => [x.id, x]));
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'No se pudo cargar el equipo';
+    error.value = translateApiError(e);
   } finally {
     loading.value = false;
   }
@@ -96,7 +98,7 @@ function myScore(s: ISeries) {
     <div v-if="loading" class="flex justify-center py-20">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
-  <div v-else-if="error || !team" class="alert alert-error">{{ error ?? 'Equipo no encontrado' }}</div>
+  <AppError v-else-if="error || !team" :error="error ?? 'Equipo no encontrado'" />
 
   <div v-else class="space-y-8">
     <!-- Cabecera del equipo -->

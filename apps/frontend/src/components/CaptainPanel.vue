@@ -2,6 +2,8 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge, ApiError } from '@/lib/api';
+import { translateApiError } from '@/i18n/translations';
+import AppError from '@/components/Error.vue';
 import { useAuth } from '@/composables/useAuth';
 
 const { isLoggedIn, isPending, user, loginWithTwitchPopup } = useAuth();
@@ -71,7 +73,7 @@ async function loadMySeries() {
     myTeam.value = t;
     settings.value = st;
   } catch (e) {
-    globalError.value = e instanceof Error ? e.message : 'Error cargando tus partidos';
+    globalError.value = translateApiError(e);
   } finally {
     loading.value = false;
   }
@@ -104,7 +106,7 @@ async function saveEaClubId() {
     myTeam.value = await api.teams.setEaClubId(myTeam.value.id, eaClubIdInput.value.trim());
     closeEaModal();
   } catch (e) {
-    eaClubIdError.value = e instanceof Error ? e.message : 'Error guardando';
+    eaClubIdError.value = translateApiError(e);
   } finally {
     eaClubIdSaving.value = false;
   }
@@ -140,7 +142,7 @@ async function openAddModal(seriesId: string, position: number, eaClubId: string
   try {
     candidates.value = await api.series.getEaCandidates(eaClubId);
   } catch (e) {
-    candidatesLoadError.value = e instanceof Error ? e.message : 'Error buscando partidos en EA';
+    candidatesLoadError.value = translateApiError(e);
   } finally {
     candidatesLoading.value = false;
   }
@@ -169,7 +171,7 @@ async function selectCandidate(candidate: IEaCandidateMatch) {
     updateSeries(seriesId, updated);
     closeAddModal();
   } catch (e) {
-    slotError.value[key] = e instanceof Error ? e.message : 'Error';
+    slotError.value[key] = translateApiError(e);
   }
 }
 
@@ -189,7 +191,7 @@ async function submitManualMatch() {
     updateSeries(seriesId, updated);
     closeAddModal();
   } catch (e) {
-    manualError.value = e instanceof Error ? e.message : 'Error guardando el partido manual';
+    manualError.value = translateApiError(e);
   } finally {
     manualSaving.value = false;
   }
@@ -251,7 +253,7 @@ async function submitEdit() {
     updateSeries(seriesId, updated);
     editingSlot.value = null;
   } catch (e) {
-    slotError.value[key] = e instanceof Error ? e.message : 'Error';
+    slotError.value[key] = translateApiError(e);
   }
 }
 
@@ -295,7 +297,7 @@ function formatMatchScore(teamData: any) {
     </div>
 
     <!-- Error global -->
-    <div v-else-if="globalError" class="alert alert-error">{{ globalError }}</div>
+    <AppError v-else-if="globalError" :error="globalError" />
 
     <template v-else>
       <!-- Cabecera de equipo: fuera de los partidos, se ve siempre que tengas equipo asignado -->

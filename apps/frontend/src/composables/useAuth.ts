@@ -57,15 +57,16 @@ export function useAuth() {
     }
   }
 
-  async function logout(callbackURL?: string) {
+  async function logout(silent?: boolean, callbackURL?: string) {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: async () => {
-          if (callbackURL) window.location.href = callbackURL;
-          else window.location.reload();
-        },
-      },
-    });
+          await authClient.$fetch("/get-session")
+          if (!silent) window.location.href = callbackURL ?? "/"
+          else window.location.reload()
+        }
+      }
+    })
   }
 
   return {
