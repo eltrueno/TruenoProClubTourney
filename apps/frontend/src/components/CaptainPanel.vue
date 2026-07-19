@@ -4,9 +4,10 @@ import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/
 import { api, teamBadge, ApiError } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
 import AppError from '@/components/Error.vue';
+import AuthGuard from '@/components/auth/AuthGuard.vue';
 import { useAuth } from '@/composables/useAuth';
 
-const { isLoggedIn, isPending, user, loginWithTwitchPopup } = useAuth();
+const { isLoggedIn, isPending, user } = useAuth();
 const series = ref<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>([]);
 const loading = ref(true);
 const globalError = ref<string | null>(null);
@@ -279,20 +280,10 @@ function formatMatchScore(teamData: any) {
 </script>
 
 <template>
-  <div>
-    <!-- Sin sesión -->
-    <div v-if="!loading && !isLoggedIn" class="hero py-20">
-      <div class="hero-content text-center">
-        <div>
-          <h2 class="text-2xl font-bold mb-2">Acceso restringido</h2>
-          <p class="opacity-60 mb-6">Inicia sesión con Twitch para acceder al panel de capitán.</p>
-          <button class="btn btn-primary" @click="loginWithTwitchPopup()">Iniciar sesión con Twitch</button>
-        </div>
-      </div>
-    </div>
-
+  <AuthGuard>
+    <template #loggedin>
     <!-- Cargando -->
-    <div v-else-if="loading" class="flex justify-center py-16">
+    <div v-if="loading" class="flex justify-center py-16">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
 
@@ -656,5 +647,6 @@ function formatMatchScore(teamData: any) {
       </div>
       <div class="modal-backdrop" @click="editingSlot = null"></div>
     </dialog>
-  </div>
+    </template>
+  </AuthGuard>
 </template>
