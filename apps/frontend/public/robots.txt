@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /404
+Disallow: /404.html
+Disallow: /admin
+Disallow: /capitan
+Disallow: /authcallback
+Disallow: /privacy
+
+Sitemap: /sitemap.xml

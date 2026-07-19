@@ -1,17 +1,64 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import Goldseparator from "../components/layout/Goldseparator.astro";
 ---
-<Layout title="Inicio">
-  <div class="hero py-16">
+
+<Layout
+  title="Inicio"
+  description="Página de inicio del torneo del mundial 2026 by Casemuro"
+  keywords="torneo, clubes pro, trueno pro club tourney, casemuro, ea sports fc, ea fc, ea sports fc 26, ea fc 26 clubes pro, FIFA, clubes pro ea sports fc, trueno, mr. casemuro, mr casemuro, el trueno, el_trueno, cp, cp ea fc, cp ea fc 26"
+  isindex={true}
+>
+  <meta
+    slot="metadata"
+    property="og:url"
+    content="https://mundialclubespro.casemurocity.org/"
+  />
+  <meta
+    slot="metadata"
+    property="og:image"
+    content="https://mundialclubespro.casemurocity.org/banner.webp"
+  />
+  <meta
+    slot="metadata"
+    name="twitter:url"
+    content="https://mundialclubespro.casemurocity.org/"
+  />
+  <meta
+    slot="metadata"
+    name="twitter:image"
+    content="https://mundialclubespro.casemurocity.org/banner.webp"
+  />
+
+  <div class="hero px-2 py-10 lg:py-20">
     <div class="hero-content text-center flex-col">
-      <h1 class="text-4xl md:text-6xl font-black tracking-tight">⚽ TruenoProClubTourney</h1>
+      <header
+        class="w-full flex items-center justify-center flex-wrap gap-6 lg:gap-36 min-h-fit"
+      >
+        <img src="/logo.webp" alt="Mundial Clubes Pro" class="h-72 w-auto" />
+
+        <h1>
+          <div class="leading-1.1">
+            <div
+              class="text-3xl font-black tracking-tighter text-primary uppercase"
+            >
+              Mundial Clubes Pro
+            </div>
+            <Goldseparator height="h-[2px]" />
+            <div
+              class="text-2xl font-bold tracking-[0.20em] uppercase opacity-90"
+            >
+              Mr Casemuro
+            </div>
+          </div>
+        </h1>
+      </header>
       <p class="py-4 opacity-60 max-w-xl">
-        El torneo de clubes pro de la comunidad. Sigue la fase de grupos, el cuadro de eliminatorias
-        y los resultados en tiempo real.
+        El torneo de clubes pro de la comunidad. Sigue la fase de grupos, el
+        cuadro de eliminatorias y los resultados en tiempo real.
       </p>
       <div class="flex flex-wrap justify-center gap-3 mt-2">
         <a href="/bracket" class="btn btn-primary">Ver el torneo</a>
-        <a href="/capitan" class="btn btn-outline">Panel de capitán</a>
       </div>
     </div>
   </div>

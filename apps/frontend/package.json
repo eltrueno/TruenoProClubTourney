@@ -9,17 +9,18 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@trueno-proclub-tourney/shared": "workspace:*",
-    "@trueno-proclub-tourney/auth": "workspace:*",
-    "better-auth": "latest",
-    "astro": "^7.0.7",
     "@astrojs/vue": "^7.0.1",
-    "vue": "^3.5.39",
-    "tailwindcss": "^4.3.2",
     "@tailwindcss/vite": "^4.3.2",
-    "daisyui": "^5.6.16"
+    "@trueno-proclub-tourney/auth": "workspace:*",
+    "@trueno-proclub-tourney/shared": "workspace:*",
+    "astro": "^7.0.7",
+    "better-auth": "latest",
+    "daisyui": "^5.6.16",
+    "tailwindcss": "^4.3.2",
+    "vue": "^3.5.39"
   },
   "devDependencies": {
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vite-svg-loader": "^5.1.1"
   }
 }

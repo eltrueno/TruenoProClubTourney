@@ -1,0 +1,307 @@
+---
+const year = new Date().getFullYear();
+import Goldseparator from "./Goldseparator.astro";
+
+import DiscordIcon from "@/assets/icons/discord.svg";
+import TwitchIcon from "@/assets/icons/twitch.svg";
+import YoutubeIcon from "@/assets/icons/youtube.svg";
+import TwitterIcon from "@/assets/icons/x.svg";
+import InstagramIcon from "@/assets/icons/instagram.svg";
+import TiktokIcon from "@/assets/icons/tiktok.svg";
+import GithubIcon from "@/assets/icons/github.svg";
+import HeartIcon from "@/assets/icons/heart.svg";
+
+const navigation = [
+    { href: "/", label: "Inicio" },
+    { href: "/bracket", label: "Cuadro" },
+    { href: "/reglamento", label: "Reglamento" },
+];
+
+const organization = [
+    {
+        href: "https://discord.gg/NsSVmaDbVQ",
+        label: "Discord",
+        icon: DiscordIcon,
+    },
+    {
+        href: "https://twitch.tv/mr_casemuro",
+        label: "Twitch",
+        icon: TwitchIcon,
+    },
+    {
+        href: "https://www.youtube.com/channel/UC33K1p2-9FwNclOSbQHFSpA/featured",
+        label: "YouTube",
+        icon: YoutubeIcon,
+    },
+    {
+        href: "https://twitter.com/Mr_Casemuro",
+        label: "X / Twitter",
+        icon: TwitterIcon,
+    },
+    {
+        href: "https://www.instagram.com/mr.casemuro/",
+        label: "Instagram",
+        icon: InstagramIcon,
+    },
+    {
+        href: "https://www.tiktok.com/@mr.casemuro",
+        label: "TikTok",
+        icon: TiktokIcon,
+    },
+];
+
+const technical = [
+    { href: "https://github.com/eltrueno", label: "GitHub", icon: GithubIcon },
+    {
+        href: "https://x.com/elh_trueno",
+        label: "X / Twitter",
+        icon: TwitterIcon,
+    },
+    {
+        href: "https://www.instagram.com/rauljimenezgal/",
+        label: "Instagram",
+        icon: InstagramIcon,
+    },
+];
+
+const sponsors = [
+    {
+        name: "Sponsor 1",
+        href: "#",
+        logo: "/sponsors/sponsor1.webp",
+    },
+    {
+        name: "Sponsor 2",
+        href: "#",
+        logo: "/sponsors/sponsor2.webp",
+    },
+    {
+        name: "Sponsor 3",
+        href: "#",
+        logo: "/sponsors/sponsor3.webp",
+    },
+];
+
+const collaborators = [
+    {
+        name: "Colaborador 1",
+        href: "#",
+        logo: "/collaborators/colab1.webp",
+    },
+    {
+        name: "Colaborador 2",
+        href: "#",
+        logo: "/collaborators/colab2.webp",
+    },
+];
+---
+
+<footer class="mt-24 border-t border-base-300 bg-base-100">
+    <Goldseparator height="h-[2px]" />
+
+    <div
+        class="mx-auto max-w-[100rem] 4xl:max-w-[112rem] 5xl:max-w-[125rem] px-6 pt-14 pb-8"
+    >
+        <div class="grid gap-14 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+            <!-- Presentación -->
+
+            <section>
+                <div class="leading-1.1 flex flex-col gap-1 w-fit">
+                    <div
+                        class="text-lg font-black tracking-tighter text-primary uppercase"
+                    >
+                        Mundial Clubes Pro
+                    </div>
+                    <Goldseparator height="h-[2px]" />
+                    <div
+                        class="text-sm font-bold tracking-[0.20em] uppercase opacity-90 text-center"
+                    >
+                        Mr Casemuro
+                    </div>
+                </div>
+
+                <p class="mt-6 max-w-md text-sm leading-relaxed opacity-70">
+                    Plataforma oficial del torneo de Clubes Pro de EA SPORTS FC
+                    26 organizado por la comunidad de Casemuro. Consulta toda la
+                    información del campeonato, sigue la competición y gestiona
+                    tu equipo desde un único lugar.
+                </p>
+            </section>
+
+            <!-- Navegación -->
+
+            <section>
+                <h3 class="footer-title text-primary">Navegación</h3>
+
+                <ul class="space-y-2">
+                    {
+                        navigation.map((item) => (
+                            <li>
+                                <a
+                                    href={item.href}
+                                    class="opacity-70 transition hover:text-accent hover:opacity-100"
+                                >
+                                    {item.label}
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+
+            <!-- Organización -->
+
+            <section>
+                <h3 class="footer-title text-primary">Organización</h3>
+
+                <p class="font-semibold">Casemuro</p>
+
+                <p class="mt-2 text-sm opacity-70 leading-relaxed">
+                    Creador de contenido y organizador principal del torneo.
+                    Responsable de la planificación, coordinación y gestión de
+                    la competición, así como de la comunidad que la hace
+                    posible.
+                </p>
+
+                <div class="mt-2 flex md:justify-center flex-wrap w-full">
+                    {
+                        organization.map((item) => {
+                            const Icon = item.icon;
+
+                            return (
+                                <a
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="btn btn-link text-base-content/70 hover:text-primary transition"
+                                    aria-label={item.label}
+                                >
+                                    <Icon class="size-4" />
+                                </a>
+                            );
+                        })
+                    }
+                </div>
+            </section>
+
+            <!-- Partner técnico -->
+
+            <section>
+                <h3 class="footer-title text-primary">Partner técnico</h3>
+
+                <p class="font-semibold">el_trueno</p>
+
+                <p class="mt-2 text-sm opacity-70 leading-relaxed">
+                    Responsable de la infraestructura tecnológica del torneo:
+                    desarrollo del sitio web, automatización de procesos,
+                    estadísticas y servicios de la competición.
+                </p>
+
+                <div class="mt-2 flex md:justify-center flex-wrap w-full">
+                    {
+                        technical.map((item) => {
+                            const Icon = item.icon;
+
+                            return (
+                                <a
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="btn btn-link text-base-content/70 hover:text-primary transition"
+                                    aria-label={item.label}
+                                >
+                                    <Icon class="size-4" />
+                                </a>
+                            );
+                        })
+                    }
+                </div>
+            </section>
+        </div>
+
+        <!-- Sponsors -->
+
+        <section class="mt-16">
+            <h3 class="footer-title text-primary">Patrocinadores</h3>
+
+            <div class="mt-5 flex flex-wrap gap-5">
+                {
+                    sponsors.map((sponsor) => (
+                        <a
+                            href={sponsor.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="flex h-24 w-48 items-center justify-center rounded-xl border border-base-300 bg-base-200 p-5 transition hover:border-primary hover:bg-base-300"
+                        >
+                            <img
+                                src={sponsor.logo}
+                                alt={sponsor.name}
+                                class="max-h-full max-w-full object-contain"
+                            />
+                        </a>
+                    ))
+                }
+            </div>
+        </section>
+
+        <!-- Colaboradores -->
+
+        <section class="mt-12">
+            <h3 class="footer-title text-primary">Colaboradores</h3>
+
+            <div class="mt-5 flex flex-wrap gap-4">
+                {
+                    collaborators.map((collaborator) => (
+                        <a
+                            href={collaborator.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="flex h-18 w-36 items-center justify-center rounded-lg border border-base-300 bg-base-200 p-4 transition hover:border-primary hover:bg-base-300"
+                        >
+                            <img
+                                src={collaborator.logo}
+                                alt={collaborator.name}
+                                class="max-h-full max-w-full object-contain"
+                            />
+                        </a>
+                    ))
+                }
+            </div>
+        </section>
+
+        <div class="my-10 h-px bg-base-300"></div>
+
+        <div
+            class="flex flex-col gap-3 text-center text-sm opacity-60 lg:flex-row lg:items-center lg:justify-between lg:text-left"
+        >
+            <div>
+                © {year} Casemuro. Todos los derechos reservados.
+            </div>
+
+            <div class="flex items-center justify-center gap-1">
+                <a
+                    href="/privacy"
+                    class="btn-link text-base-content decoration-transparent transition hover:text-primary"
+                    >Política de Privacidad</a
+                >
+            </div>
+
+            <div class="flex items-center justify-center gap-1">
+                Desarrollado con <HeartIcon
+                    class="size-4 font-semibold text-primary animate-pulse"
+                /> por
+                <span class="font-semibold text-primary"> el_trueno </span>
+            </div>
+        </div>
+
+        <p
+            class="mt-4 text-center text-[0.70rem] leading-relaxed opacity-40 w-full"
+        >
+            EA SPORTS FC, Electronic Arts y FIFA son marcas registradas de sus
+            respectivos propietarios. El Mundial Clubes Pro de Casemuro es un
+            torneo independiente organizado por la comunidad y no está afiliado,
+            patrocinado, respaldado ni asociado oficialmente con Electronic Arts
+            Inc., FIFA ni ninguna de sus entidades.
+        </p>
+    </div>
+</footer>

@@ -197,7 +197,7 @@ const statusLabel: Record<string, string> = { pending: 'Sin jugar', in_progress:
                       <img v-if="badge(s.teamA)" :src="badge(s.teamA)!" class="w-6 h-6 object-contain shrink-0" />
                     </div>
                     <!-- Marcador -->
-                    <div class="shrink-0 text-center min-w-[3.5rem]">
+                    <div class="shrink-0 text-center min-w-14">
                       <span v-if="s.status !== 'pending'" class="font-black tabular-nums text-sm">
                         {{ seriesWins(s)[0] }} – {{ seriesWins(s)[1] }}
                       </span>

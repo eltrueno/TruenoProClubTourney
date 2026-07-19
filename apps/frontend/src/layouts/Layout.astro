@@ -1,31 +1,65 @@
 ---
 import "../styles/global.css";
-import NavLinks from "../components/NavLinks.vue";
+import { ClientRouter } from "astro:transitions";
+import Navbar from "../components/layout/Navbar.astro";
+import Footer from "../components/layout/Footer.astro";
 interface Props {
   title: string;
+  description: string;
+  keywords?: string;
+  isindex?: boolean;
 }
-const { title } = Astro.props;
+const { title, description, keywords, isindex = false } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es" data-theme="mundial">
+<html lang="es" data-theme="mundial" class="min-h-screen">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} · TruenoProClubTourney</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Mundial de Casemuro</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Raúl Jiménez 'el_trueno'" />
+    <link rel="icon" type="image/webp" href="/logo.webp" />
+    {keywords && <meta name="keywords" content={keywords} />}
+    {!keywords && <meta name="keywords" content={title} />}
+
+    <meta name="theme-color" content="#C5923B" />
+    <meta name="color-scheme" content="dark" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:domain" content="mundialclubespro.casemurocity.org" />
+    <meta name="twitter:site" content="@elh_trueno" />
+    <meta name="twitter:creator" content="@elh_trueno" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <slot name="metadata" />
+
+    <ClientRouter />
   </head>
-  <body class="min-h-screen bg-base-200 text-base-content">
-    <nav class="navbar bg-base-100 shadow-sm sticky top-0 z-50 px-4">
-      <div class="flex-1">
-        <a href="/" class="btn btn-ghost gap-2 text-lg font-black">
-          ⚽ <span class="hidden sm:inline">TruenoProClubTourney</span>
-        </a>
-      </div>
-      <NavLinks client:load />
-    </nav>
-    <main class="max-w-5xl mx-auto p-4 md:p-6">
+  <body class="min-h-screen bg-base-300 text-base-content">
+    <Navbar />
+    <main class="max-w-[100rem] 4xl:max-w-[112rem] 5xl:max-w-[125rem] mx-auto">
       <slot />
     </main>
+    <Footer />
   </body>
 </html>
+
+<style>
+  body {
+    background:
+      radial-gradient(circle at top, rgba(197, 146, 59, 0.08), transparent 33%),
+      linear-gradient(
+        180deg,
+        var(--color-base-100) 0%,
+        var(--color-base-200) 33%,
+        var(--color-base-300) 66%
+      );
+  }
+</style>
