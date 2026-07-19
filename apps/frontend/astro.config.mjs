@@ -10,7 +10,7 @@ export default defineConfig({
   output: 'static',
   integrations: [vue()],
   vite: {
-    plugins: [tailwindcss(), svgLoader()],
+    plugins: [tailwindcss(), svgLoader({ defaultImport: "url" })],
   },
   // Si publicas en usuario.github.io/repo, descomenta y ajusta:
   // base: '/trueno-pro-club-tourney',

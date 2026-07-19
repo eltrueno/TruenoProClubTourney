@@ -1,10 +1,67 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Bracket from '../components/Bracket.vue';
+import Layout from "../layouts/Layout.astro";
+import Bracket from "../components/Bracket.vue";
 ---
-<Layout title="Cuadro del torneo">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-black">Cuadro del torneo</h1>
+
+<Layout
+  title="Cuadro del torneo"
+  description="Cuadro del torneo del mundial 2026 by Casemuro"
+  keywords="torneo, clubes pro, trueno pro club tourney, casemuro, ea sports fc, ea fc, ea sports fc 26, ea fc 26 clubes pro, FIFA, clubes pro ea sports fc, trueno, mr. casemuro, mr casemuro, el trueno, el_trueno, cp, cp ea fc, cp ea fc 26"
+>
+  <meta
+    slot="metadata"
+    property="og:url"
+    content="https://mundialclubespro.casemurocity.org/"
+  />
+  <meta
+    slot="metadata"
+    property="og:image"
+    content="https://mundialclubespro.casemurocity.org/banner.webp"
+  />
+  <meta
+    slot="metadata"
+    property="og:title"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+  <meta
+    slot="metadata"
+    property="og:description"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+  <meta slot="metadata" property="og:type" content="website" />
+  <meta
+    slot="metadata"
+    property="og:site_name"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+  <meta slot="metadata" property="og:locale" content="es_ES" />
+  <meta slot="metadata" name="twitter:card" content="summary_large_image" />
+  <meta slot="metadata" name="twitter:site" content="@mr_casemuro" />
+  <meta
+    slot="metadata"
+    name="twitter:title"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+  <meta
+    slot="metadata"
+    name="twitter:description"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+  <meta
+    slot="metadata"
+    name="twitter:image"
+    content="https://mundialclubespro.casemurocity.org/banner.webp"
+  />
+  <meta
+    slot="metadata"
+    name="twitter:image:alt"
+    content="Torneo Mundial de Clubes Pro 2026 by Casemuro"
+  />
+
+  <div class="flex justify-center items-center px-2 py-10 lg:py-20">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-4xl font-black text-primary">Cuadro del torneo</h1>
+    </div>
+    <Bracket client:load />
   </div>
-  <Bracket client:load />
 </Layout>

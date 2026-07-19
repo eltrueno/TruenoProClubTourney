@@ -1,6 +1,7 @@
 ---
 const currentPath = Astro.url.pathname;
 import Goldseparator from "./Goldseparator.astro";
+import AccountMenu from "../auth/AccountDropdown.vue";
 
 const links = [
     { href: "/", label: "Inicio" },
@@ -101,9 +102,7 @@ const links = [
 
                 <!-- Derecha -->
                 <div class="navbar-end gap-2">
-                    <a href="/login" class="btn btn-primary btn-sm">
-                        Iniciar sesión
-                    </a>
+                    <AccountMenu client:load />
                 </div>
             </nav>
 
