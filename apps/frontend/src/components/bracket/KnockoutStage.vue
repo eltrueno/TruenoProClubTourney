@@ -13,12 +13,10 @@ const props = defineProps<{
 
 // Rondas en el orden declarado en la config, solo las que ya tienen series
 const roundOrder = [
-  'Preliminar',
-  'Dieciseisavos',
-  'Octavos',
-  'Cuartos',
-  'Semifinal',
-  'Tercer puesto',
+  'Dieciseisavos de final',
+  'Octavos de final',
+  'Cuartos de final',
+  'Semifinales',
   'Final',
 ];
 
