@@ -92,9 +92,10 @@ function myScore(s: ISeries) {
 </script>
 
 <template>
-  <div v-if="loading" class="flex justify-center py-20">
-    <span class="loading loading-spinner loading-lg text-primary"></span>
-  </div>
+  <div>
+    <div v-if="loading" class="flex justify-center py-20">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
   <div v-else-if="error || !team" class="alert alert-error">{{ error ?? 'Equipo no encontrado' }}</div>
 
   <div v-else class="space-y-8">
@@ -153,5 +154,6 @@ function myScore(s: ISeries) {
         </a>
       </div>
     </section>
+  </div>
   </div>
 </template>

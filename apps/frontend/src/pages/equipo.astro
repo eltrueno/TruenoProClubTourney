@@ -1,7 +1,13 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import TeamPage from '../components/TeamPage.vue';
+import Layout from "../layouts/Layout.astro";
+import TeamPage from "../components/TeamPage.vue";
 ---
-<Layout title="Equipo">
-  <TeamPage client:load />
+
+<Layout
+  title="Equipo"
+  description="Página de equipo del torneo del mundial 2026 by Casemuro"
+>
+  <div class="py-10 lg:py-16">
+    <TeamPage client:load />
+  </div>
 </Layout>

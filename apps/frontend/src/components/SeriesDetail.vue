@@ -91,9 +91,10 @@ function formatScore(teamData: any) {
 </script>
 
 <template>
-  <div v-if="loading" class="flex justify-center py-16">
-    <span class="loading loading-spinner loading-lg text-primary"></span>
-  </div>
+  <div>
+    <div v-if="loading" class="flex justify-center py-16">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
   <div v-else-if="error" class="alert alert-error">{{ error }}</div>
   <div v-else-if="series" class="space-y-8">
 
@@ -120,9 +121,9 @@ function formatScore(teamData: any) {
             </div>
           </div>
           <div class="flex flex-col items-center gap-2 flex-1 text-center">
-            <img v-if="badge(series.teamB)" :href="`/equipo?id=${teamId(series.teamB)}`" class="w-14 h-14 object-contain" />
+            <img v-if="badge(series.teamB)" :src="badge(series.teamB)!" class="w-14 h-14 object-contain" />
             <span class="font-bold leading-tight">
-              <a v-if="series.teamB" :href="`/equipo?id=${series.teamB}`" class="hover:underline">{{ teamName(series.teamB) }}</a>
+              <a v-if="series.teamB" :href="`/equipo?id=${teamId(series.teamB)}`" class="hover:underline">{{ teamName(series.teamB) }}</a>
               <template v-else>{{ teamName(series.teamB) }}</template>
             </span>
             <span v-if="captainOf(series.teamB)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamB) }}</span>
@@ -253,6 +254,6 @@ function formatScore(teamData: any) {
         </div>
       </details>
     </div>
-
+  </div>
   </div>
 </template>
