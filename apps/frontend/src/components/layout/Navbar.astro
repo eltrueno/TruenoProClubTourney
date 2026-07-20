@@ -10,7 +10,7 @@ const links = [
 ];
 ---
 
-<header class="sticky top-0 z-50">
+<header class="sticky top-0 z-50" transition:name="navbar" transition:persist>
     <div class="border-b border-base-300 bg-base-100/90 backdrop-blur-xl">
         <!-- Línea decorativa -->
         <div
@@ -58,7 +58,6 @@ const links = [
                         <img
                             src="/logo.webp"
                             alt="logo"
-                            transition:name="logo"
                             class="h-14 w-auto transition-transform duration-300 group-hover:scale-105"
                         />
 
@@ -102,7 +101,7 @@ const links = [
                 </div>
 
                 <!-- Derecha -->
-                <div class="navbar-end gap-2">
+                <div class="navbar-end gap-2" data-astro-prefetch="false">
                     <AccountMenu client:load />
                 </div>
             </nav>
