@@ -21,6 +21,16 @@ watch(
     },
     { immediate: true, once: true }
 );
+
+console.log("[LOGOUT] mounted");
+
+watch(isPending, (v) => {
+    console.log("[LOGOUT] pending", v);
+});
+
+watch(isLoggedIn, (v) => {
+    console.log("[LOGOUT] logged", v);
+});
 </script>
 
 <template>

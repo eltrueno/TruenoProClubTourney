@@ -26,33 +26,49 @@ export function useAuth() {
   });
 
   async function loadMyTeam() {
+    console.log("[AUTH] loadMyTeam start");
     isLoggingIn.value = true;
     try {
       myTeam.value = await api.teams.getMine();
+      console.log("[AUTH] team", myTeam.value);
     } catch {
       myTeam.value = null;
     } finally {
+      console.log("[AUTH] loadMyTeam end");
       isLoggingIn.value = false;
     }
   }
 
-  watch(
-    user,
-    async () => {
-      if (!user.value) {
-        myTeam.value = null;
-        return;
-      }
+  /* watch(
+     user,
+     async () => {
+       if (!user.value) {
+         myTeam.value = null;
+         return;
+       }
+ 
+       await loadMyTeam();
+     },
+     { immediate: true }
+   );*/
 
-      await loadMyTeam();
+  watch(
+    isPending,
+    (pending) => {
+      console.log("[AUTH] watch pending", pending);
+
+      if (pending || isLoggingIn.value) return;
+
+      console.log("[AUTH] loadMyTeam()");
+      loadMyTeam();
     },
     { immediate: true }
   );
 
-
   async function loginWithTwitchPopup(callbackURL?: string, silent = false) {
     isLoggingIn.value = true;
     try {
+      console.log("[AUTH] Abriendo popup");
       const { data } = silent ? await authClient.signIn.social({
         provider: 'twitch',
         callbackURL: `${window.location.origin}/authcallback?redirect=${encodeURIComponent(callbackURL ?? "/")}`,
@@ -80,7 +96,11 @@ export function useAuth() {
         async (e) => {
           if (e.origin !== window.location.origin) return;
           if (e.data?.type !== "auth-success") return;
+          console.log("[AUTH] Mensaje recibido", e.data);
           await authClient.getSession({ fetchOptions: { force: true } });
+          console.log("[AUTH] getSession terminado");
+          console.log("[AUTH] user =", user.value);
+          console.log("[AUTH] pending =", isPending.value);
           isLoggingIn.value = false;
           if (!silent) {
             window.location.href = e.data.redirect;
@@ -100,7 +120,7 @@ export function useAuth() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: async () => {
-          await authClient.$fetch("/get-session")
+          await authClient.getSession({ fetchOptions: { force: true } });
           if (!silent) window.location.href = callbackURL ?? "/"
           else window.location.reload()
         }
