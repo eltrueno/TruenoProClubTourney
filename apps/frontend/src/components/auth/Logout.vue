@@ -1,36 +1,40 @@
 <script setup lang="ts">
-import { watch } from "vue";
+import { watch, onMounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 
 const { logout, isLoggedIn, isPending } = useAuth();
 
-watch(
-    isPending,
-    async (pending) => {
-        if (pending) return;
+onMounted(() => {
+    watch(
+        isPending,
+        async (pending) => {
+            if (pending) return;
 
-        const redirect =
-            new URLSearchParams(location.search).get("redirect");
+            const redirect =
+                new URLSearchParams(location.search).get("redirect") ?? "/";
 
-        if (!isLoggedIn.value) {
-            window.location.replace(redirect ?? "/");
-            return;
-        }
+            if (!isLoggedIn.value) {
+                window.location.replace(redirect);
+                return;
+            }
 
-        await logout(!redirect, redirect ?? undefined);
-    },
-    { immediate: true, once: true }
-);
+            await logout(false, redirect);
+        },
+        { immediate: true }
+    );
 
-console.log("[LOGOUT] mounted");
+    console.log("[LOGOUT] mounted");
 
-watch(isPending, (v) => {
-    console.log("[LOGOUT] pending", v);
+    watch(isPending, (v) => {
+        console.log("[LOGOUT] pending", v);
+    });
+
+    watch(isLoggedIn, (v) => {
+        console.log("[LOGOUT] logged", v);
+});
 });
 
-watch(isLoggedIn, (v) => {
-    console.log("[LOGOUT] logged", v);
-});
+
 </script>
 
 <template>

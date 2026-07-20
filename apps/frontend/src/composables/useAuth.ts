@@ -61,47 +61,6 @@ export function useAuth() {
   console.log("[AUTH] useAuth()");
   const sessionState = authClient.useSession();
   console.log("[AUTH] useSession()", sessionState);
-  /*const sessionState = authClient.useSession();
-
-  const session = computed(() => sessionState.value?.data ?? null);
-  const isPending = computed(() => sessionState.value?.isPending ?? false);
-  const user = computed(() => session.value?.user ?? null);
-  const isLoggedIn = computed(() => !!user.value);
-  const isAdmin = computed(() => user.value?.role === 'admin');
-
-  const myTeam = ref<ITeam | null>(null);
-  const isCaptain = computed(() => {
-    if (!isLoggedIn.value || !myTeam.value) return false;
-    return user.value?.name.toLowerCase() === myTeam.value.captainName?.toLowerCase();
-  });
-
-  async function loadMyTeam() {
-    console.log("[AUTH] loadMyTeam start");
-    isLoggingIn.value = true;
-    try {
-      myTeam.value = await api.teams.getMine();
-      console.log("[AUTH] team", myTeam.value);
-    } catch {
-      myTeam.value = null;
-    } finally {
-      console.log("[AUTH] loadMyTeam end");
-      isLoggingIn.value = false;
-    }
-  }*/
-
-  /* watch(
-     user,
-     async () => {
-       if (!user.value) {
-         myTeam.value = null;
-         return;
-       }
- 
-       await loadMyTeam();
-     },
-     { immediate: true }
-   );*/
-
 
 
   async function loginWithTwitchPopup(callbackURL?: string, silent = false) {
@@ -159,9 +118,11 @@ export function useAuth() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: async () => {
+          console.log("SIGNOUT SUCCESS");
           await authClient.getSession({ fetchOptions: { force: true } });
           if (!silent) window.location.href = callbackURL ?? "/"
           else window.location.reload()
+          console.log("SESSION REFRESHED");
         }
       }
     })
