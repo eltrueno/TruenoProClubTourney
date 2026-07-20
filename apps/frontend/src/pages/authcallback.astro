@@ -3,20 +3,32 @@
 // de Twitch y avisar a la ventana padre que la sesion se inicio correctamente.
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Iniciando sesion...</title>
-</head>
-<body style="background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
-    <script is:inline>
-        if (window.opener) {
-            window.opener.postMessage("auth-success", window.location.origin);
-            window.close();
-        } else {
-            window.location.href = "/";
-        }
-    </script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Iniciando sesion...</title>
+    </head>
+    <body
+        style="background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;"
+    >
+        <script is:inline>
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get("redirect") || "/";
+
+            if (window.opener) {
+                window.opener.postMessage(
+                    {
+                        type: "auth-success",
+                        redirect,
+                    },
+                    window.location.origin,
+                );
+
+                window.close();
+            } else {
+                window.location.replace(redirect);
+            }
+        </script>
+    </body>
 </html>

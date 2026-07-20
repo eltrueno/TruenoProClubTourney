@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import LoginWall from "@/components/auth/LoginWall.vue";
+---
+
+<Layout title="Iniciar sesión" description="Inicia sesión">
+    <div class="py-10 lg:py-16 flex-1 flex flex-col">
+        <LoginWall client:load />
+    </div>
+</Layout>

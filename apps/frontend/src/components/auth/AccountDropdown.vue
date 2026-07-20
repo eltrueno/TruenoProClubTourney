@@ -5,10 +5,11 @@ import { useAuth } from "@/composables/useAuth";
 import ChevronDown from "@/assets/icons/chevron-down.svg?component";
 import UserRound from "@/assets/icons/user-circle.svg?component";
 import LogOut from "@/assets/icons/signout.svg?component";
-import Shield from "@/assets/icons/shield.svg?component";
+import Shield from "@/assets/icons/shield-check.svg?component";
 import LogIn from "@/assets/icons/signin.svg?component";
+import Captain from "@/assets/icons/copyright.svg?component";
 
-const { user, isLoggedIn, isPending, logout, isAdmin } = useAuth();
+const { user, isLoggedIn, isPending, logout, isAdmin, isCaptain } = useAuth();
 
 
 watch(
@@ -87,27 +88,25 @@ watch(
           </li>
 
           <!-- TODO -->
-          <!--
           <li v-if="isCaptain">
             <a href="/capitan">
-              <Trophy class="size-4"/>
+              <Captain class="size-4"/>
               Panel de capitán
             </a>
           </li>
-          -->
 
           <li v-if="isAdmin">
             <a href="/admin">
               <Shield class="size-4" />
-              Administración
+              Panel de admin
             </a>
           </li>
 
           <li>
-            <button @click="logout()">
+            <a href="/logout">
               <LogOut class="size-4" />
               Cerrar sesión
-            </button>
+            </a>
           </li>
 
         </template>
@@ -115,10 +114,10 @@ watch(
         <template v-else>
 
           <li>
-            <button @click="">
+            <a href="/login?redirect=/">
               <LogIn class="size-4" />
               Iniciar sesión
-            </button>
+            </a>
           </li>
 
         </template>

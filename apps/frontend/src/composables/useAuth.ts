@@ -1,5 +1,7 @@
 import { authClient } from '@/lib/auth';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import type { ITeam } from '@trueno-proclub-tourney/shared';
+import { api } from '@/lib/api';
 
 const isLoggingIn = ref(false);
 
@@ -17,10 +19,41 @@ export function useAuth() {
   const isLoggedIn = computed(() => !!user.value);
   const isAdmin = computed(() => user.value?.role === 'admin');
 
-  async function loginWithTwitchPopup(callbackURL?: string) {
+  const myTeam = ref<ITeam | null>(null);
+  const isCaptain = computed(() => {
+    if (!isLoggedIn.value || !myTeam.value) return false;
+    return user.value?.name.toLowerCase() === myTeam.value.captainName?.toLowerCase();
+  });
+
+  async function loadMyTeam() {
     isLoggingIn.value = true;
     try {
-      const { data } = await authClient.signIn.social({
+      myTeam.value = await api.teams.getMine();
+    } catch {
+      myTeam.value = null;
+    } finally {
+      isLoggingIn.value = false;
+    }
+  }
+
+  watch(
+    isPending,
+    (pending) => {
+      if (pending || isLoggingIn.value) return;
+      loadMyTeam();
+    },
+    { immediate: true }
+  );
+
+
+  async function loginWithTwitchPopup(callbackURL?: string, silent = false) {
+    isLoggingIn.value = true;
+    try {
+      const { data } = silent ? await authClient.signIn.social({
+        provider: 'twitch',
+        callbackURL: `${window.location.origin}/authcallback?redirect=${encodeURIComponent(callbackURL ?? "/")}`,
+        disableRedirect: true,
+      }) : await authClient.signIn.social({
         provider: 'twitch',
         callbackURL: `${window.location.origin}/authcallback`,
         disableRedirect: true,
@@ -42,11 +75,13 @@ export function useAuth() {
         'message',
         async (e) => {
           if (e.origin !== window.location.origin) return;
-          if (e.data === 'auth-success') {
-            await authClient.getSession({ fetchOptions: { force: true } });
-            isLoggingIn.value = false;
-            if (callbackURL) window.location.href = callbackURL;
-            else window.location.reload();
+          if (e.data?.type !== "auth-success") return;
+          await authClient.getSession({ fetchOptions: { force: true } });
+          isLoggingIn.value = false;
+          if (!silent) {
+            window.location.href = e.data.redirect;
+          } else {
+            window.location.reload();
           }
         },
         { once: true }
@@ -69,11 +104,14 @@ export function useAuth() {
     })
   }
 
+
+
   return {
     session,
     user,
     isLoggedIn,
     isAdmin,
+    isCaptain,
     isPending,
     isLoggingIn,
     loginWithTwitchPopup,
