@@ -10,7 +10,10 @@ const isLoggingIn = ref(false);
  * TruenoProClubServices: envuelve authClient.useSession() y añade helpers
  * de login/logout con popup de Twitch.
  */
+
 export function useAuth() {
+  console.log("[AUTH] useAuth()");
+  console.log("[AUTH] useSession()", authClient.useSession());
   const sessionState = authClient.useSession();
 
   const session = computed(() => sessionState.value?.data ?? null);
@@ -53,13 +56,13 @@ export function useAuth() {
    );*/
 
   watch(
-    isPending,
-    (pending) => {
-      console.log("[AUTH] watch pending", pending);
+    isLoggedIn,
+    (logged) => {
+      if (!logged) {
+        myTeam.value = null;
+        return;
+      }
 
-      if (pending || isLoggingIn.value) return;
-
-      console.log("[AUTH] loadMyTeam()");
       loadMyTeam();
     },
     { immediate: true }
