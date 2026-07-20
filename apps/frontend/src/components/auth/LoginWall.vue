@@ -4,6 +4,18 @@ import { useAuth } from "@/composables/useAuth"
 
 const { isLoggedIn, isPending, isLoggingIn, loginWithTwitchPopup } = useAuth()
 const acceptedPrivacy = ref(false)
+
+
+import { watch } from "vue";
+
+watch(isPending, v => console.log("[LOGIN] pending", v), {
+    immediate: true
+});
+
+watch(isLoggedIn, v => console.log("[LOGIN] logged", v), {
+    immediate: true
+});
+
 </script>
 
 <template>
