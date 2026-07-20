@@ -10,12 +10,14 @@ const links = [
 ];
 ---
 
-<header class="sticky top-0 z-50" transition:name="navbar" transition:persist>
+<header class="sticky top-0 z-50">
     <div class="border-b border-base-300 bg-base-100/90 backdrop-blur-xl">
         <!-- Línea decorativa -->
         <div
             class="h-[2px] md:h-[3px]"
             style="background:linear-gradient(90deg,transparent,var(--color-primary),transparent)"
+            transition:name="navbar_top_line"
+            transition:persist
         >
         </div>
         <div
@@ -54,7 +56,12 @@ const links = [
                         </svg>
                     </button>
 
-                    <a href="/" class="group flex items-center gap-4">
+                    <a
+                        href="/"
+                        class="group flex items-center gap-4"
+                        transition:name="navbar_logo"
+                        transition:persist
+                    >
                         <img
                             src="/logo.webp"
                             alt="logo"
@@ -152,6 +159,8 @@ const links = [
         <div
             class="h-[2px] md:h-[3px]"
             style="background:linear-gradient(90deg,transparent,var(--color-primary),transparent)"
+            transition:name="navbar_bottom_line"
+            transition:persist
         >
         </div>
     </div>
