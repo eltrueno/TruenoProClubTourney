@@ -83,21 +83,21 @@ watch(
 
         <template v-if="isLoggedIn">
 
-          <li class="menu-title cursor-default pointer-events-none my-1">
+          <li class="menu-title cursor-default pointer-events-none my-1 flex flex-col items-center justify-center text-center">
             <span>{{ user?.name }}</span>
             <span class="badge badge-primary badge-sm uppercase">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
           </li>
 
           <!-- TODO -->
           <li v-if="isCaptain">
-            <a href="/capitan" class="btn btn-soft">
+            <a href="/capitan" class="btn btn-soft flex items-center gap-3">
               <Captain class="size-6"/>
               Panel de capitán
             </a>
           </li>
 
           <li v-if="isAdmin">
-            <a href="/admin" class="btn btn-soft">
+            <a href="/admin" class="btn btn-soft flex items-center gap-3">
               <Shield class="size-4" />
               Panel de admin
             </a>
@@ -106,7 +106,7 @@ watch(
           <div class="divider my-1"></div>
 
           <li>
-            <a href="/logout" class="btn btn-soft btn-error" data-astro-reload>
+            <a href="/logout" class="btn btn-soft btn-error flex items-center gap-3" data-astro-reload>
               <LogOut class="size-4" />
               Cerrar sesión
             </a>
@@ -117,7 +117,7 @@ watch(
         <template v-else>
 
           <li>
-            <a href="/login?redirect=/" class="btn btn-soft" data-astro-reload>
+            <a href="/login?redirect=/" class="btn btn-soft flex items-center gap-3" data-astro-reload>
               <LogIn class="size-4" />
               Iniciar sesión
             </a>
