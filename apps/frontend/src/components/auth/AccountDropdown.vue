@@ -8,6 +8,7 @@ import LogOut from "@/assets/icons/signout.svg?component";
 import Shield from "@/assets/icons/shield-check.svg?component";
 import LogIn from "@/assets/icons/signin.svg?component";
 import Captain from "@/assets/icons/copyright.svg?component";
+import { translateRole } from "@/i18n/translations";
 
 const { user, isLoggedIn, isPending, logout, isAdmin, isCaptain } = useAuth();
 
@@ -82,28 +83,30 @@ watch(
 
         <template v-if="isLoggedIn">
 
-          <li class="menu-title">
+          <li class="menu-title cursor-default pointer-events-none my-1">
             <span>{{ user?.name }}</span>
-            <span class="text-xs opacity-60">{{ user?.email }}</span>
+            <span class="badge badge-primary badge-sm uppercase">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
           </li>
 
           <!-- TODO -->
           <li v-if="isCaptain">
-            <a href="/capitan">
+            <a href="/capitan" class="btn btn-soft">
               <Captain class="size-6"/>
               Panel de capitán
             </a>
           </li>
 
           <li v-if="isAdmin">
-            <a href="/admin">
+            <a href="/admin" class="btn btn-soft">
               <Shield class="size-4" />
               Panel de admin
             </a>
           </li>
+          
+          <div class="divider my-1"></div>
 
           <li>
-            <a href="/logout" data-astro-reload>
+            <a href="/logout" class="btn btn-soft btn-error" data-astro-reload>
               <LogOut class="size-4" />
               Cerrar sesión
             </a>
@@ -114,7 +117,7 @@ watch(
         <template v-else>
 
           <li>
-            <a href="/login?redirect=/" data-astro-reload>
+            <a href="/login?redirect=/" class="btn btn-soft" data-astro-reload>
               <LogIn class="size-4" />
               Iniciar sesión
             </a>
