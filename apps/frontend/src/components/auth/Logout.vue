@@ -22,16 +22,6 @@ onMounted(() => {
         },
         { immediate: true }
     );
-
-    console.log("[LOGOUT] mounted");
-
-    watch(isPending, (v) => {
-        console.log("[LOGOUT] pending", v);
-    });
-
-    watch(isLoggedIn, (v) => {
-        console.log("[LOGOUT] logged", v);
-});
 });
 
 

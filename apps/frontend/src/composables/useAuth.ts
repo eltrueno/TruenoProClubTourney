@@ -31,15 +31,12 @@ const isCaptain = computed(() => {
 });
 
 async function loadMyTeam() {
-  console.log("[AUTH] loadMyTeam start");
   isLoggingIn.value = true;
   try {
     myTeam.value = await api.teams.getMine();
-    console.log("[AUTH] team", myTeam.value);
   } catch {
     myTeam.value = null;
   } finally {
-    console.log("[AUTH] loadMyTeam end");
     isLoggingIn.value = false;
   }
 }
@@ -60,15 +57,12 @@ watch(
 );
 
 export function useAuth() {
-  console.log("[AUTH] useAuth()");
   const sessionState = authClient.useSession();
-  console.log("[AUTH] useSession()", sessionState);
 
 
   async function loginWithTwitchPopup(callbackURL?: string, silent = false) {
     isLoggingIn.value = true;
     try {
-      console.log("[AUTH] Abriendo popup");
       const { data } = silent ? await authClient.signIn.social({
         provider: 'twitch',
         callbackURL: `${window.location.origin}/authcallback?redirect=${encodeURIComponent(callbackURL ?? "/")}`,
@@ -96,11 +90,7 @@ export function useAuth() {
         async (e) => {
           if (e.origin !== window.location.origin) return;
           if (e.data?.type !== "auth-success") return;
-          console.log("[AUTH] Mensaje recibido", e.data);
           await authClient.getSession({ fetchOptions: { force: true } });
-          console.log("[AUTH] getSession terminado");
-          console.log("[AUTH] user =", user.value);
-          console.log("[AUTH] pending =", isPending.value);
           isLoggingIn.value = false;
           if (!silent) {
             window.location.href = e.data.redirect;
@@ -111,7 +101,6 @@ export function useAuth() {
         { once: true }
       );
     } catch (error) {
-      console.error('[useAuth] Error en login:', error);
       isLoggingIn.value = false;
     }
   }
@@ -120,11 +109,9 @@ export function useAuth() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: async () => {
-          console.log("SIGNOUT SUCCESS");
           await authClient.getSession({ fetchOptions: { force: true } });
           if (!silent) window.location.href = callbackURL ?? "/"
           else window.location.reload()
-          console.log("SESSION REFRESHED");
         }
       }
     })
