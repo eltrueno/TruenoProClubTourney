@@ -1,9 +1,16 @@
 User-agent: *
+
 Disallow: /404
 Disallow: /404.html
 Disallow: /admin
 Disallow: /capitan
 Disallow: /authcallback
 Disallow: /privacy
+Disallow: /privacidad
+Disallow: /logout
+Disallow: /login
+
+Allow: /
+Allow: /bracket
 
 Sitemap: /sitemap.xml
