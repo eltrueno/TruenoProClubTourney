@@ -78,26 +78,26 @@ watch(
 
       <ul
         tabindex="0"
-        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-200 p-2 shadow-xl"
+        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-200 p-2 shadow-xl gap-1"
       >
 
         <template v-if="isLoggedIn">
 
           <li class="menu-title cursor-default pointer-events-none my-1 flex flex-col items-center justify-center text-center">
-            <span>{{ user?.name }}</span>
-            <span class="badge badge-primary badge-sm uppercase">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
+            <span class="font-semibold text-base leading-tight">{{ user?.name }}</span>
+            <span class="badge badge-primary badge-sm uppercase text-sm leading-tight py-1 px-2">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
           </li>
 
           <!-- TODO -->
           <li v-if="isCaptain">
-            <a href="/capitan" class="btn btn-soft flex items-center gap-3">
+            <a href="/capitan" class="btn btn-soft flex items-center justify-start gap-3">
               <Captain class="size-6"/>
               Panel de capitán
             </a>
           </li>
 
           <li v-if="isAdmin">
-            <a href="/admin" class="btn btn-soft flex items-center gap-3">
+            <a href="/admin" class="btn btn-soft flex items-center justify-start gap-3">
               <Shield class="size-4" />
               Panel de admin
             </a>
@@ -106,7 +106,7 @@ watch(
           <div class="divider my-1"></div>
 
           <li>
-            <a href="/logout" class="btn btn-soft btn-error flex items-center gap-3" data-astro-reload>
+            <a href="/logout" class="btn btn-soft btn-error flex items-center justify-start gap-3" data-astro-reload>
               <LogOut class="size-4" />
               Cerrar sesión
             </a>
@@ -117,7 +117,7 @@ watch(
         <template v-else>
 
           <li>
-            <a href="/login?redirect=/" class="btn btn-soft flex items-center gap-3" data-astro-reload>
+            <a href="/login?redirect=/" class="btn btn-soft flex items-center justify-start gap-3" data-astro-reload>
               <LogIn class="size-4" />
               Iniciar sesión
             </a>
