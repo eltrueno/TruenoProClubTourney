@@ -78,14 +78,14 @@ watch(
 
       <ul
         tabindex="0"
-        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-200 p-2 shadow-xl gap-1"
+        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-200 p-2 shadow-xl gap-2"
       >
 
         <template v-if="isLoggedIn">
 
           <li class="menu-title cursor-default pointer-events-none my-1 flex flex-col items-center justify-center text-center">
-            <span class="font-semibold text-base leading-tight">{{ user?.name }}</span>
-            <span class="badge badge-primary badge-sm uppercase text-sm leading-tight py-1 px-2">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
+            <span class="font-semibold text-lg leading-tight">{{ user?.name }}</span>
+            <span class="mt-1 badge badge-primary badge-sm uppercase text-sm leading-tight p-1">{{ user?.role ? translateRole(user.role) : 'Visitante' }}</span>
           </li>
 
           <!-- TODO -->
