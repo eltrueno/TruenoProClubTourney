@@ -45,9 +45,11 @@ async function loadMyTeam() {
 }
 
 watch(
-  user,
-  async (user) => {
-    if (!user) {
+  [isPending, user],
+  async ([pending, currentUser]) => {
+    if (pending) return;
+
+    if (!currentUser) {
       myTeam.value = null;
       return;
     }
