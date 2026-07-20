@@ -31,7 +31,7 @@ watch(
     <!-- Skeleton loading -->
     <template v-if="isPending">
       <div
-        class="btn btn-ghost rounded-full border border-base-300 bg-base-200 px-2 cursor-default"
+        class="btn btn-ghost rounded-2xl border border-base-300 bg-base-300 px-2 cursor-default shadow-md"
       >
         <div class="skeleton size-10 rounded-full shrink-0"></div>
 
@@ -48,7 +48,7 @@ watch(
       <div
         tabindex="0"
         role="button"
-        class="btn btn-ghost rounded-full border border-base-300 bg-base-200 hover:bg-base-300 px-2"
+        class="btn btn-ghost rounded-2xl border border-base-300 bg-base-300 hover:bg-base-300 px-2 shadow-md"
       >
 
         <div class="avatar">
@@ -78,7 +78,7 @@ watch(
 
       <ul
         tabindex="0"
-        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-200 p-2 shadow-xl gap-2"
+        class="dropdown-content menu mt-3 w-72 rounded-box border border-base-300 bg-base-300 p-2 shadow-xl gap-2"
       >
 
         <template v-if="isLoggedIn">
@@ -90,20 +90,20 @@ watch(
 
           <!-- TODO -->
           <li v-if="isCaptain">
-            <a href="/capitan" class="btn btn-soft flex items-center justify-start gap-3">
+            <a href="/capitan" class="btn btn-ghost flex items-center justify-start gap-3">
               <Captain class="size-6"/>
               Panel de capitán
             </a>
           </li>
 
           <li v-if="isAdmin">
-            <a href="/admin" class="btn btn-soft flex items-center justify-start gap-3">
+            <a href="/admin" class="btn btn-ghost flex items-center justify-start gap-3">
               <Shield class="size-4" />
               Panel de admin
             </a>
           </li>
           
-          <div class="divider my-1"></div>
+          <div class="divider"></div>
 
           <li>
             <a href="/logout" class="btn btn-soft btn-error flex items-center justify-start gap-3" data-astro-reload>
@@ -117,7 +117,7 @@ watch(
         <template v-else>
 
           <li>
-            <a href="/login?redirect=/" class="btn btn-soft flex items-center justify-start gap-3" data-astro-reload>
+            <a href="/login?redirect=/" class="btn btn-ghost flex items-center justify-start gap-3" data-astro-reload>
               <LogIn class="size-4" />
               Iniciar sesión
             </a>

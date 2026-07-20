@@ -81,19 +81,6 @@ const sponsors = [
         logo: "/sponsors/sponsor3.webp",
     },
 ];
-
-const collaborators = [
-    {
-        name: "Colaborador 1",
-        href: "#",
-        logo: "/collaborators/colab1.webp",
-    },
-    {
-        name: "Colaborador 2",
-        href: "#",
-        logo: "/collaborators/colab2.webp",
-    },
-];
 ---
 
 <footer
@@ -240,31 +227,6 @@ const collaborators = [
                             <img
                                 src={sponsor.logo}
                                 alt={sponsor.name}
-                                class="max-h-full max-w-full object-contain"
-                            />
-                        </a>
-                    ))
-                }
-            </div>
-        </section>
-
-        <!-- Colaboradores -->
-
-        <section class="mt-12">
-            <h3 class="footer-title text-primary">Colaboradores</h3>
-
-            <div class="mt-5 flex flex-wrap gap-4">
-                {
-                    collaborators.map((collaborator) => (
-                        <a
-                            href={collaborator.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="flex h-18 w-36 items-center justify-center rounded-lg border border-base-300 bg-base-200 p-4 transition hover:border-primary hover:bg-base-300"
-                        >
-                            <img
-                                src={collaborator.logo}
-                                alt={collaborator.name}
                                 class="max-h-full max-w-full object-contain"
                             />
                         </a>
