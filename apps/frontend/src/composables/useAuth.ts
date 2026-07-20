@@ -37,10 +37,14 @@ export function useAuth() {
   }
 
   watch(
-    isPending,
-    (pending) => {
-      if (pending || isLoggingIn.value) return;
-      loadMyTeam();
+    user,
+    async () => {
+      if (!user.value) {
+        myTeam.value = null;
+        return;
+      }
+
+      await loadMyTeam();
     },
     { immediate: true }
   );

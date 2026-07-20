@@ -1,17 +1,26 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { watch } from "vue";
 import { useAuth } from "@/composables/useAuth";
 
-const { logout } = useAuth();
+const { logout, isLoggedIn, isPending } = useAuth();
 
-onMounted(() => {
-    const redirect = new URLSearchParams(location.search).get("redirect");
-    if (!redirect) {
-        logout(true);
-        return;
-    }
-    logout(false, redirect);
-});
+watch(
+    isPending,
+    async (pending) => {
+        if (pending) return;
+
+        const redirect =
+            new URLSearchParams(location.search).get("redirect");
+
+        if (!isLoggedIn.value) {
+            window.location.replace(redirect ?? "/");
+            return;
+        }
+
+        await logout(!redirect, redirect ?? undefined);
+    },
+    { immediate: true, once: true }
+);
 </script>
 
 <template>

@@ -90,7 +90,7 @@ watch(
           <!-- TODO -->
           <li v-if="isCaptain">
             <a href="/capitan">
-              <Captain class="size-4"/>
+              <Captain class="size-6"/>
               Panel de capitán
             </a>
           </li>
