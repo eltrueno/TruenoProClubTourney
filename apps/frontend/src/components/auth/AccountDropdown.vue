@@ -103,7 +103,7 @@ watch(
           </li>
 
           <li>
-            <a href="/logout">
+            <a href="/logout" data-astro-reload>
               <LogOut class="size-4" />
               Cerrar sesión
             </a>
@@ -114,7 +114,7 @@ watch(
         <template v-else>
 
           <li>
-            <a href="/login?redirect=/">
+            <a href="/login?redirect=/" data-astro-reload>
               <LogIn class="size-4" />
               Iniciar sesión
             </a>

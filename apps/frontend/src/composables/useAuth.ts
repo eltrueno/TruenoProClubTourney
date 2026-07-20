@@ -57,9 +57,6 @@ watch(
 );
 
 export function useAuth() {
-  const sessionState = authClient.useSession();
-
-
   async function loginWithTwitchPopup(callbackURL?: string, silent = false) {
     isLoggingIn.value = true;
     try {
