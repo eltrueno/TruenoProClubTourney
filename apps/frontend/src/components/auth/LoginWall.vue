@@ -6,28 +6,12 @@ import { authClient } from '@/lib/auth'
 const { isLoggedIn, isPending, isLoggingIn, loginWithTwitchPopup } = useAuth()
 const acceptedPrivacy = ref(false)
 
-
-async function refreshSession() {
-  await authClient.getSession({
-    fetchOptions: {
-      force: true,
-    },
-  });
-}
-
-function onPageShow(e: PageTransitionEvent) {
-  console.log("[PAGESHOW]", e.persisted);
-}
-
-onMounted(() => {
-  console.log("[LOGIN] mounted");
-  window.addEventListener("pageshow", onPageShow);
+window.addEventListener("pageshow", async (e) => {
+  if (e.persisted) {
+    window.location.reload();
+  }
 });
 
-onUnmounted(() => {
-  console.log("[LOGIN] unmounted");
-  window.removeEventListener("pageshow", onPageShow);
-});
 
 
 </script>

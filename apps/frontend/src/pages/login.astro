@@ -4,7 +4,9 @@ import LoginWall from "@/components/auth/LoginWall.vue";
 ---
 
 <Layout title="Iniciar sesión" description="Inicia sesión">
+    <meta slot="metadata" property="Cache-Control" content="no-store" />
+    <meta slot="metadata" property="Pragma" content="no-cache" />
     <div class="py-10 lg:py-16 flex-1 flex flex-col">
-        <LoginWall client:load />
+        <LoginWall client:only="vue" />
     </div>
 </Layout>
