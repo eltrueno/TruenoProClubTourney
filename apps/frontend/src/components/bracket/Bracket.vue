@@ -4,6 +4,7 @@ import type { ISeries, ITeam, StageType } from '@trueno-proclub-tourney/shared';
 import { api } from '@/lib/api';
 import GroupsStage from './GroupsStage.vue';
 import KnockoutStage from './KnockoutStage.vue';
+import Loader from '@/components/layout/Loader.vue';
 
 type StageView = {
   id: string;
@@ -76,7 +77,7 @@ const knockoutStage = computed(() =>
 
 <template>
   <div v-if="loading" class="flex justify-center py-16">
-    <span class="loading loading-spinner loading-lg text-primary"></span>
+    <Loader />
   </div>
   <div v-else-if="error" class="alert alert-error">{{ error }}</div>
 

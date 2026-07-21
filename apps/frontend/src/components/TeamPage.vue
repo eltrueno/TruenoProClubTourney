@@ -4,6 +4,7 @@ import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
 import AppError from './Error.vue';
+import Loader from '@/components/layout/Loader.vue';
 
 const teamId = ref<string | null>(null);
 const team = ref<ITeam | null>(null);
@@ -96,7 +97,7 @@ function myScore(s: ISeries) {
 <template>
   <div>
     <div v-if="loading" class="flex justify-center py-20">
-      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <Loader />
     </div>
   <AppError v-else-if="error || !team" :error="error ?? 'Equipo no encontrado'" />
 

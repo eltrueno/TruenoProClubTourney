@@ -6,6 +6,7 @@ import { translateApiError } from '@/i18n/translations';
 import AppError from '@/components/Error.vue';
 import AuthGuard from '@/components/auth/AuthGuard.vue';
 import { useAuth } from '@/composables/useAuth';
+import Loader from '@/components/layout/Loader.vue';
 
 const { isLoggedIn, isPending, user } = useAuth();
 const series = ref<import('@trueno-proclub-tourney/shared').IMySeriesResponse[]>([]);
@@ -284,7 +285,7 @@ function formatMatchScore(teamData: any) {
     <template #loggedin>
     <!-- Cargando -->
     <div v-if="loading" class="flex justify-center py-16">
-      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <Loader />
     </div>
 
     <!-- Error global -->

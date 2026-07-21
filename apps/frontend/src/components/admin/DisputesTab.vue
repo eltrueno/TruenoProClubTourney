@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
 import AppError from '@/components/Error.vue';
 import { translateApiError } from '@/i18n/translations';
+import Loader from '@/components/layout/Loader.vue';
 
 const { data: disputes, loading, error, execute: load } = useApi(api.series.admin.listDisputes);
 const { execute: resolve } = useApi(api.series.admin.resolveDispute);
@@ -26,7 +27,7 @@ async function submitResolve(seriesId: string, position: number) {
 </script>
 
 <template>
-  <div v-if="loading" class="flex justify-center py-8"><span class="loading loading-spinner"></span></div>
+  <div v-if="loading" class="flex justify-center py-8"><Loader /></div>
   <AppError v-else-if="error" :error="translateApiError(error)" />
   <div v-else-if="!disputes?.length" class="text-center py-12 opacity-50">No hay disputas pendientes 🎉</div>
   <div v-else class="space-y-3">

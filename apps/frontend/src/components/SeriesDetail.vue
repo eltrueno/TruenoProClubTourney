@@ -4,6 +4,7 @@ import type { ISeries, ITeam, IMatchPlayer } from '@trueno-proclub-tourney/share
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
 import AppError from './Error.vue';
+import Loader from '@/components/layout/Loader.vue';
 
 const series = ref<ISeries | null>(null);
 const teams = ref<Record<string, ITeam>>({});
@@ -95,7 +96,7 @@ function formatScore(teamData: any) {
 <template>
   <div>
     <div v-if="loading" class="flex justify-center py-16">
-      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <Loader />
     </div>
   <AppError v-else-if="error" :error="error" />
   <div v-else-if="series" class="space-y-8">

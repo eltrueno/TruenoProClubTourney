@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { api } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
+import Loader from '@/components/layout/Loader.vue';
 
 const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number } | null>(null);
 const saving = ref(false);
@@ -40,7 +41,7 @@ async function saveCooldown() {
 
 <template>
   <div v-if="!settings" class="flex justify-center py-10">
-    <span class="loading loading-spinner loading-md"></span>
+    <Loader />
   </div>
   <div v-else class="max-w-md space-y-6">
     <div class="flex items-center justify-between bg-base-200 rounded-lg p-4">
