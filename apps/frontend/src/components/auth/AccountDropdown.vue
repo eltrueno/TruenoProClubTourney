@@ -103,7 +103,7 @@ watch(
             </a>
           </li>
           
-          <div class="divider"></div>
+          <div class="divider my-0"></div>
 
           <li>
             <a href="/logout" class="btn btn-soft btn-error flex items-center justify-start gap-3" data-astro-reload>

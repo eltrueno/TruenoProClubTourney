@@ -1,12 +1,33 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from "@/composables/useAuth"
+import { authClient } from '@/lib/auth'
 
 const { isLoggedIn, isPending, isLoggingIn, loginWithTwitchPopup } = useAuth()
 const acceptedPrivacy = ref(false)
 
 
-import { watch } from "vue";
+async function refreshSession() {
+  await authClient.getSession({
+    fetchOptions: {
+      force: true,
+    },
+  });
+}
+
+function onPageShow(e: PageTransitionEvent) {
+  if (e.persisted) {
+    refreshSession();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("pageshow", onPageShow);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("pageshow", onPageShow);
+});
 
 
 </script>
@@ -52,7 +73,7 @@ import { watch } from "vue";
 
              <div :class="['w-full', { 'tooltip tooltip-bottom tooltip-error': !acceptedPrivacy }]" data-tip="Debes aceptar la política de privacidad">
                <button 
-                 @click="loginWithTwitchPopup(false)" 
+                 @click="loginWithTwitchPopup('/',false)" 
                  :disabled="!acceptedPrivacy || isLoggingIn"
                  class="btn bg-[#9146FF] hover:bg-[#772ce8] border-none text-white btn-block btn-md sm:btn-lg gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(145,70,255,0.3)] transition-all duration-300 active:scale-[0.98] font-black tracking-tight sm:tracking-wider group text-xs sm:text-base disabled:bg-[#9146FF]/30 disabled:text-white/30 disabled:cursor-not-allowed"
                >
