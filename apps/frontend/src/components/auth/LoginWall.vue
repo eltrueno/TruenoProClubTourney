@@ -15,18 +15,16 @@ async function refreshSession() {
   });
 }
 
-function onPageShow(e: PageTransitionEvent) {
-  if (e.persisted) {
-    refreshSession();
-  }
+function onNavigate() {
+  refreshSession();
 }
 
 onMounted(() => {
-  window.addEventListener("pageshow", onPageShow);
+  document.addEventListener("astro:page-load", onNavigate);
 });
 
 onUnmounted(() => {
-  window.removeEventListener("pageshow", onPageShow);
+  document.removeEventListener("astro:page-load", onNavigate);
 });
 
 
