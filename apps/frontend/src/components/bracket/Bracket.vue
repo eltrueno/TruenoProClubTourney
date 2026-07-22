@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import GroupsStage from './GroupsStage.vue';
 import KnockoutStage from './KnockoutStage.vue';
 import Loader from '@/components/layout/Loader.vue';
-import AppError from '@/components/Error.vue';
+import AppError from '@/components/ui/Error.vue';
 
 const series = ref<ISeries[]>([]);
 const teams = ref<Record<string, ITeam>>({});

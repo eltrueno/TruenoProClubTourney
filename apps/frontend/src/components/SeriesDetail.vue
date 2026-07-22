@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam, IMatchPlayer } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
-import AppError from '@/components/Error.vue';
+import AppError from '@/components/ui/Error.vue';
 import Loader from '@/components/layout/Loader.vue';
 import TeamLogo from '@/components/ui/TeamLogo.vue';
 

@@ -3,7 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue';
 import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge, ApiError } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
-import AppError from '@/components/Error.vue';
+import AppError from '@/components/ui/Error.vue';
 import AuthGuard from '@/components/auth/AuthGuard.vue';
 import TeamLogo from '@/components/ui/TeamLogo.vue';
 import { useAuth } from '@/composables/useAuth';
@@ -76,7 +76,11 @@ async function loadMySeries() {
     myTeam.value = t;
     settings.value = st;
   } catch (e) {
-    globalError.value = translateApiError(e);
+    globalError.value = translateApiError(e, {
+      statuses: {
+        404: 'No eres capitán de ningún equipo'
+      }
+    });
   } finally {
     loading.value = false;
   }

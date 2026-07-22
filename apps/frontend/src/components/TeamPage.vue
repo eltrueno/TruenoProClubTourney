@@ -4,7 +4,7 @@ import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import TeamLogo from '@/components/ui/TeamLogo.vue';
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
-import AppError from './Error.vue';
+import AppError from './ui/Error.vue';
 import Loader from '@/components/layout/Loader.vue';
 
 const teamId = ref<string | null>(null);

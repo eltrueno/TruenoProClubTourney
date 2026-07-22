@@ -91,7 +91,7 @@ export const translateApiError = (error: unknown, overrides?: TranslateApiErrorO
             404: 'Contenido no encontrado',
             409: 'Conflicto al procesar la petición',
             422: 'Datos inválidos',
-            500: 'Problema interno del servidor. Inténtalo más tarde',
+            500: 'Error interno del servidor. Inténtalo más tarde',
             503: 'Servicio no disponible temporalmente'
         };
 

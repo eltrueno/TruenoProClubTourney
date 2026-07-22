@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { api } from '@/lib/api';
 import { useApi } from '@/composables/useApi';
-import AppError from '@/components/Error.vue';
+import AppError from '@/components/ui/Error.vue';
 import { translateApiError } from '@/i18n/translations';
 import Loader from '@/components/layout/Loader.vue';
 

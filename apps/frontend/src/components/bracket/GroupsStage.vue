@@ -3,7 +3,7 @@ import { ref, watch, computed } from 'vue';
 import type {IGroupStanding, ISeries, ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '@/lib/api';
 import Loader from '@/components/layout/Loader.vue';
-import AppError from '@/components/Error.vue';
+import AppError from '@/components/ui/Error.vue';
 import TeamLogo from '@/components/ui/TeamLogo.vue';
 
 const props = defineProps<{
