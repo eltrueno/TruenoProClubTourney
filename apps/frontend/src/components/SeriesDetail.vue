@@ -3,8 +3,9 @@ import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam, IMatchPlayer } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
-import AppError from './Error.vue';
+import AppError from '@/components/Error.vue';
 import Loader from '@/components/layout/Loader.vue';
+import TeamLogo from '@/components/ui/TeamLogo.vue';
 
 const series = ref<ISeries | null>(null);
 const teams = ref<Record<string, ITeam>>({});
@@ -106,12 +107,12 @@ function formatScore(teamData: any) {
       <div class="card-body">
         <p class="text-xs font-semibold uppercase tracking-wider opacity-40 mb-3">{{ series.round }}</p>
         <div class="flex items-center justify-between gap-4">
-          <div class="flex flex-col items-center gap-2 flex-1 text-center">
-            <img v-if="badge(series.teamA)" :src="badge(series.teamA)!" class="w-14 h-14 object-contain" />
-            <span class="font-bold leading-tight">
+          <div class="flex flex-col md:flex-row items-center gap-4 flex-1">
+            <TeamLogo size="lg" :url="badge(series.teamA)" />
+            <div class="text-center md:text-left font-bold leading-tight">
               <a v-if="series.teamA" :href="`/equipo?id=${teamId(series.teamA)}`" class="hover:underline">{{ teamName(series.teamA) }}</a>
               <template v-else>{{ teamName(series.teamA) }}</template>
-            </span>
+            </div>
             <span v-if="captainOf(series.teamA)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamA) }}</span>
             <span v-if="totalScore" class="text-4xl font-black tabular-nums">{{ totalScore.A }}</span>
           </div>
@@ -123,12 +124,12 @@ function formatScore(teamData: any) {
               <span v-else class="badge badge-ghost">Pendiente</span>
             </div>
           </div>
-          <div class="flex flex-col items-center gap-2 flex-1 text-center">
-            <img v-if="badge(series.teamB)" :src="badge(series.teamB)!" class="w-14 h-14 object-contain" />
-            <span class="font-bold leading-tight">
+          <div class="flex flex-col md:flex-row-reverse items-center gap-4 flex-1">
+            <TeamLogo size="lg" :url="badge(series.teamB)" />
+            <div class="text-center md:text-right font-bold leading-tight">
               <a v-if="series.teamB" :href="`/equipo?id=${teamId(series.teamB)}`" class="hover:underline">{{ teamName(series.teamB) }}</a>
               <template v-else>{{ teamName(series.teamB) }}</template>
-            </span>
+            </div>
             <span v-if="captainOf(series.teamB)" class="text-xs opacity-50">Capitán: {{ captainOf(series.teamB) }}</span>
             <span v-if="totalScore" class="text-4xl font-black tabular-nums">{{ totalScore.B }}</span>
           </div>
@@ -168,7 +169,7 @@ function formatScore(teamData: any) {
                 <tbody>
                   <tr v-for="p in sortedPlayers(match.effective.teamA?.players)" :key="p.eaId"
                     :class="{ 'font-bold text-warning': p.manOfTheMatch }">
-                    <td class="max-w-[120px]">
+                    <td class="max-w-30">
                       <span class="badge badge-xs badge-ghost mr-1">{{ posLabel[p.position] ?? p.position }}</span>
                       <span class="truncate">{{ p.name }}</span>
                       <span v-if="p.manOfTheMatch" class="ml-1 text-warning text-xs">★</span>
@@ -216,7 +217,7 @@ function formatScore(teamData: any) {
                 <tbody>
                   <tr v-for="p in sortedPlayers(match.effective.teamB?.players)" :key="p.eaId"
                     :class="{ 'font-bold text-warning': p.manOfTheMatch }">
-                    <td class="max-w-[120px]">
+                    <td class="max-w-30">
                       <span class="badge badge-xs badge-ghost mr-1">{{ posLabel[p.position] ?? p.position }}</span>
                       <span class="truncate">{{ p.name }}</span>
                       <span v-if="p.manOfTheMatch" class="ml-1 text-warning text-xs">★</span>
@@ -244,18 +245,6 @@ function formatScore(teamData: any) {
           </div>
         </div>
       </div>
-
-      <!-- Historial de ediciones -->
-      <details v-if="match.edits?.length" class="collapse collapse-arrow bg-base-100">
-        <summary class="collapse-title text-xs opacity-40 min-h-0 py-2">
-          {{ match.edits.length }} edición(es) manuales
-        </summary>
-        <div class="collapse-content">
-          <div v-for="edit in match.edits" :key="edit.at" class="text-xs opacity-50 py-1 border-t border-base-200">
-            <span class="font-mono">{{ new Date(edit.at).toLocaleString('es') }}</span> — {{ edit.change }}
-          </div>
-        </div>
-      </details>
     </div>
   </div>
   </div>

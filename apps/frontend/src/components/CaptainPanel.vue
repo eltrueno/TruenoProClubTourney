@@ -5,6 +5,7 @@ import { api, teamBadge, ApiError } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
 import AppError from '@/components/Error.vue';
 import AuthGuard from '@/components/auth/AuthGuard.vue';
+import TeamLogo from '@/components/ui/TeamLogo.vue';
 import { useAuth } from '@/composables/useAuth';
 import Loader from '@/components/layout/Loader.vue';
 
@@ -296,10 +297,10 @@ function formatMatchScore(teamData: any) {
       <div v-if="myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300 mb-6">
         <div class="flex items-center gap-4">
           <div class="avatar">
-            <div class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm">
-              <span v-if="!teamBadge(myTeam)">{{ myTeam.name.charAt(0) }}</span>
-              <img v-else :src="teamBadge(myTeam)!" class="object-contain" />
-            </div>
+              <div v-if="!teamBadge(myTeam)" class="w-16 h-16 rounded bg-base-300 flex items-center justify-center text-xl font-bold">
+                <span>{{ myTeam.name.charAt(0) }}</span>
+              </div>
+              <TeamLogo v-else size="xl" :url="teamBadge(myTeam)" />
           </div>
           <div>
             <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>
@@ -352,13 +353,25 @@ function formatMatchScore(teamData: any) {
           <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
             <div class="flex flex-wrap items-center gap-3">
               <div class="font-bold text-lg flex items-center gap-2">
-                <img v-if="teamBadge(s.teamA as any)" :src="teamBadge(s.teamA as any)!" class="w-6 h-6 object-contain" />
-                <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
-                <span v-if="s.mySide === 'A'" class="badge badge-primary badge-xs">Tú</span>
-                <span class="opacity-30 text-sm font-normal">vs</span>
-                <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
-                <span v-if="s.mySide === 'B'" class="badge badge-primary badge-xs">Tú</span>
-                <img v-if="teamBadge(s.teamB as any)" :src="teamBadge(s.teamB as any)!" class="w-6 h-6 object-contain" />
+                <TeamLogo size="md" :url="teamBadge(s.teamA as any)" />
+                <div class="flex flex-col items-start">
+                  <div class="flex items-center gap-2">
+                    <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
+                    <span v-if="s.mySide === 'A'" class="badge badge-primary badge-xs">Tú</span>
+                  </div>
+                  <span v-if="(s.teamA as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamA as any).eaClubName }}</span>
+                </div>
+
+                <span class="opacity-30 text-sm font-normal mx-2">vs</span>
+
+                <div class="flex flex-col items-end">
+                  <div class="flex items-center gap-2">
+                    <span v-if="s.mySide === 'B'" class="badge badge-primary badge-xs">Tú</span>
+                    <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
+                  </div>
+                  <span v-if="(s.teamB as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamB as any).eaClubName }}</span>
+                </div>
+                <TeamLogo size="md" :url="teamBadge(s.teamB as any)" />
               </div>
               <span class="badge badge-sm badge-ghost">{{ s.round }}</span>
               <span class="badge badge-sm badge-ghost">Bo{{ s.bestOf }}</span>

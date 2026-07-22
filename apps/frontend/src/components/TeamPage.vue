@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import type { ISeries, ITeam } from '@trueno-proclub-tourney/shared';
+import TeamLogo from '@/components/ui/TeamLogo.vue';
 import { api, teamBadge } from '../lib/api';
 import { translateApiError } from '../i18n/translations';
 import AppError from './Error.vue';
@@ -176,8 +177,7 @@ const teamPlayers = computed(() => {
   <div v-else class="space-y-8">
     <!-- Cabecera del equipo -->
     <div class="flex items-center gap-5 bg-base-100 rounded-2xl p-6 shadow-sm border border-base-300">
-      <img v-if="teamBadge(team)" :src="teamBadge(team)!" class="w-16 h-16 object-contain shrink-0" />
-      <div v-else class="w-16 h-16 rounded bg-base-300 shrink-0"></div>
+      <TeamLogo size="xl" :url="teamBadge(team)" />
       <div class="min-w-0">
         <h1 class="text-2xl font-black truncate">{{ team.name }}</h1>
         <p v-if="team.captainName" class="text-sm opacity-60">Capitán: {{ team.captainName }}</p>
@@ -219,8 +219,7 @@ const teamPlayers = computed(() => {
           :href="`/series?id=${s.id}`"
           class="flex items-center gap-3 bg-base-100 hover:bg-base-200 transition-colors border border-base-300 rounded-xl px-4 py-3"
         >
-          <img v-if="rivalBadge(s)" :src="rivalBadge(s)!" class="w-8 h-8 object-contain shrink-0" />
-          <div v-else class="w-8 h-8 rounded bg-base-300 shrink-0"></div>
+          <TeamLogo size="md" :url="rivalBadge(s)" />
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate">vs {{ rivalName(s) }}</div>
             <div class="text-xs opacity-40">{{ s.round }} · {{ s.stageType === 'groups' ? `Grupo ${s.group}` : 'Eliminatoria' }}</div>
@@ -241,8 +240,7 @@ const teamPlayers = computed(() => {
           :href="`/series?id=${s.id}`"
           class="flex items-center gap-3 bg-base-100 hover:bg-base-200 transition-colors border border-base-300 rounded-xl px-4 py-3"
         >
-          <img v-if="rivalBadge(s)" :src="rivalBadge(s)!" class="w-8 h-8 object-contain shrink-0" />
-          <div v-else class="w-8 h-8 rounded bg-base-300 shrink-0"></div>
+          <TeamLogo size="md" :url="rivalBadge(s)" />
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate">vs {{ rivalName(s) }}</div>
             <div class="text-xs opacity-40">{{ s.round }}</div>

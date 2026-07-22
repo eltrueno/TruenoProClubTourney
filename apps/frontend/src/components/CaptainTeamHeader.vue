@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import type { ITeam } from '@trueno-proclub-tourney/shared';
 import { api, teamBadge } from '@/lib/api';
+import TeamLogo from '@/components/TeamLogo.vue';
 import { translateApiError } from '@/i18n/translations';
 import { useAuth } from '@/composables/useAuth';
 
@@ -55,10 +56,10 @@ async function saveEaClubId() {
   <div v-if="isLoggedIn && myTeam" class="bg-base-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-base-300 mb-6">
     <div class="flex items-center gap-4">
       <div class="avatar">
-        <div class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm">
-          <span v-if="!teamBadge(myTeam)">{{ myTeam.name.charAt(0) }}</span>
-          <img v-else :src="teamBadge(myTeam)!" class="object-contain" />
+        <div v-if="!teamBadge(myTeam)" class="w-12 h-12 rounded bg-base-100 flex items-center justify-center text-xl shadow-sm overflow-hidden shrink-0">
+          <span>{{ myTeam.name.charAt(0) }}</span>
         </div>
+        <TeamLogo v-else size="lg" :url="teamBadge(myTeam)" />
       </div>
       <div>
         <h2 class="text-xl font-bold">{{ myTeam.name }}</h2>

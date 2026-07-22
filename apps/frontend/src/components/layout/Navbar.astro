@@ -4,7 +4,7 @@ import AccountMenu from "../auth/AccountDropdown.vue";
 
 const links = [
     { href: "/", label: "Inicio" },
-    { href: "/bracket", label: "Cuadro" },
+    { href: "/bracket", label: "Cuadro", astroreload: true },
     { href: "/reglamento", label: "Reglamento" },
 ];
 
@@ -20,7 +20,7 @@ const isActive = (href: string) => {
     <div class="border-b border-base-300 bg-base-100/90 backdrop-blur-xl">
         <!-- Línea decorativa -->
         <div
-            class="h-[2px] md:h-[3px]"
+            class="h-0.5 md:h-0.75"
             style="background:linear-gradient(90deg,transparent,var(--color-primary),transparent)"
             transition:name="navbar_top_line"
             transition:persist
@@ -97,6 +97,9 @@ const isActive = (href: string) => {
                             links.map((link) => (
                                 <li>
                                     <a
+                                        data-astro-reload={
+                                            link.astroreload ? "true" : "false"
+                                        }
                                         href={link.href}
                                         class="btn btn-ghost btn-lg relative px-3 py-2 font-semibold transition-colors uppercase text-base"
                                         class:list={[
@@ -168,7 +171,7 @@ const isActive = (href: string) => {
             </div>
         </div>
         <div
-            class="h-[2px] md:h-[3px]"
+            class="h-0.5 md:h-0.75"
             style="background:linear-gradient(90deg,transparent,var(--color-primary),transparent)"
             transition:name="navbar_bottom_line"
             transition:persist

@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import GroupsStage from './GroupsStage.vue';
 import KnockoutStage from './KnockoutStage.vue';
 import Loader from '@/components/layout/Loader.vue';
+import AppError from '@/components/Error.vue';
 
 const series = ref<ISeries[]>([]);
 const teams = ref<Record<string, ITeam>>({});
@@ -66,7 +67,7 @@ const activeStage = computed<IStageConfig | null>(() => {
   <div v-if="loading" class="flex justify-center py-16">
     <Loader />
   </div>
-  <div v-else-if="error" class="alert alert-error">{{ error }}</div>
+  <AppError v-else-if="error" :error="error" />
 
   <div v-else-if="stages.length" class="space-y-6">
     <!-- MÓVIL: Selector de fase -->
@@ -93,6 +94,7 @@ const activeStage = computed<IStageConfig | null>(() => {
         :series="series"
         :teams="teams"
         :qualify-count="(activeStage as any).qualification?.perGroupAutoQualify ?? 2"
+        :best-others="(activeStage as any).qualification?.bestOthers ?? 0"
       />
       <KnockoutStage
         v-else-if="activeStage?.type === 'knockout'"
@@ -120,6 +122,7 @@ const activeStage = computed<IStageConfig | null>(() => {
           :series="series"
           :teams="teams"
           :qualify-count="(stage as any).qualification?.perGroupAutoQualify ?? 2"
+          :best-others="(stage as any).qualification?.bestOthers ?? 0"
         />
         <KnockoutStage
           v-else-if="stage.type === 'knockout'"

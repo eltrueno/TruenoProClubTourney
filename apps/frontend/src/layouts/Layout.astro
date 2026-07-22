@@ -39,7 +39,6 @@ const { title, description, keywords, isindex = false } = Astro.props;
     <meta name="twitter:description" content={description} />
 
     <slot name="metadata" />
-
     <ClientRouter />
   </head>
   <body class="min-h-screen bg-base-300 text-base-content flex flex-col">

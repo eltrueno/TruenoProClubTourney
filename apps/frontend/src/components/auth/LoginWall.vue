@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from "@/composables/useAuth"
 import { authClient } from '@/lib/auth'
+import Loader from '@/components/layout/Loader.vue'
 
 const { isLoggedIn, isPending, isLoggingIn, loginWithTwitchPopup } = useAuth()
 const acceptedPrivacy = ref(false)
@@ -23,7 +24,7 @@ window.addEventListener("pageshow", async (e) => {
         
         <!-- Estado de carga -->
         <div v-if="isPending" class="flex flex-col items-center gap-6 py-8">
-           <span class="loading loading-ring loading-lg text-primary scale-125"></span>
+           <Loader class="scale-125 mb-4" />
            <div class="space-y-2">
              <p class="text-sm font-black tracking-widest uppercase opacity-70 animate-pulse">Verificando sesión</p>
              <p class="text-xs opacity-40">Por favor, espera un momento...</p>
