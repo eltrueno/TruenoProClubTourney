@@ -11,14 +11,20 @@ export interface IPlayerAggregateStats {
   playerName: string;
 
   matchesPlayed: number;
+  minutesPlayed: number;
   wins: number;
   losses: number;
-  draws: number;
+  ties: number;
+  draws: number; // mantengo draws por compatibilidad antigua, aunque se usará ties
 
   goals: number;
   assists: number;
   shots: number;
   shotAccuracy: number; // %
+
+  hattricks: number;
+  pokers: number;
+  positionsPlayed: Record<string, number>;
 
   passAttempts: number;
   passesMade: number;

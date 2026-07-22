@@ -8,6 +8,7 @@ import type {
 } from '@trueno-proclub-tourney/shared';
 import { SeriesModel, type ISeriesDoc, type IMatchDoc, type IMatchPlayerDoc, type IMatchTeamDataDoc } from '../models/Series.model.js';
 import { getTeamIdForCaptain } from './captain.service.js';
+import { eventBus, EVENTS } from './events.service.js';
 
 function toIMatch(doc: IMatchDoc): IMatch {
   return JSON.parse(JSON.stringify(doc)); // subdocumento plano, basta serializar
@@ -344,6 +345,17 @@ export async function confirmMatch(
   recomputeSeriesStatus(series);
 
   await series.save();
+  
+  if (match.status === 'confirmed') {
+    const players = [
+      ...(match.effective.teamA?.players || []),
+      ...(match.effective.teamB?.players || [])
+    ].map(p => p.eaId);
+    if (players.length > 0) {
+      eventBus.emitEvent(EVENTS.PLAYER_STATS_UPDATE_REQUESTED, { eaPlayerIds: Array.from(new Set(players)) });
+    }
+  }
+  
   return toMySeriesResponse(series, side);
 }
 
@@ -404,6 +416,12 @@ export async function editMatch(
   const side = await resolveSide(series, requesterUserId);
   const match = findMatch(series, position);
 
+  const wasConfirmed = match.status === 'confirmed';
+  const oldPlayers = [
+    ...(match.effective.teamA?.players || []),
+    ...(match.effective.teamB?.players || [])
+  ].map(p => p.eaId);
+
   if (match.effective.teamA) {
     match.effective.teamA.score = patch.teamA.score;
     match.effective.teamA.penaltiesScore = patch.teamA.penaltiesScore ?? null;
@@ -421,6 +439,18 @@ export async function editMatch(
 
   recomputeSeriesStatus(series);
   await series.save();
+  
+  if (wasConfirmed) {
+    const newPlayers = [
+      ...(match.effective.teamA?.players || []),
+      ...(match.effective.teamB?.players || [])
+    ].map(p => p.eaId);
+    const allAffected = Array.from(new Set([...oldPlayers, ...newPlayers]));
+    if (allAffected.length > 0) {
+      eventBus.emitEvent(EVENTS.PLAYER_STATS_UPDATE_REQUESTED, { eaPlayerIds: allAffected });
+    }
+  }
+
   return toMySeriesResponse(series, side);
 }
 
@@ -458,6 +488,15 @@ export async function resolveDispute(
 
   recomputeSeriesStatus(series);
   await series.save();
+
+  const players = [
+    ...(match.effective.teamA?.players || []),
+    ...(match.effective.teamB?.players || [])
+  ].map(p => p.eaId);
+  if (players.length > 0) {
+    eventBus.emitEvent(EVENTS.PLAYER_STATS_UPDATE_REQUESTED, { eaPlayerIds: Array.from(new Set(players)) });
+  }
+
   return toISeries(series);
 }
 

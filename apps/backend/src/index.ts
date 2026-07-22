@@ -8,6 +8,7 @@ import { seriesRouter } from './routes/series.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { playerStatsRouter } from './routes/playerStats.routes.js';
 import { settingsRouter } from './routes/settings.routes.js';
+import { eventBus } from './services/events.service.js';
 
 
 
@@ -15,6 +16,7 @@ const DEVMODE = process.env.DEVMODE === "true";
 
 async function main() {
   await connectDB();
+  await eventBus.init();
 
   const app = express();
 

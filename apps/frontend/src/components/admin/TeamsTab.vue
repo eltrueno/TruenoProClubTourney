@@ -10,13 +10,17 @@ const { data: teams, loading, error, execute: loadTeams } = useApi(api.teams.get
 const { loading: creating, error: createError, execute: create } = useApi(api.teams.admin.create);
 const { execute: assign } = useApi(api.teams.admin.assignCaptain);
 const { execute: unassign } = useApi(api.teams.admin.removeCaptain);
+const { execute: updateTeam } = useApi(api.teams.admin.update);
 
 onMounted(loadTeams);
 
 const form = ref({ name: '', countryCode: '', logoUrl: '', group: '' });
 const captainInputs = ref<Record<string, string>>({});
+const clubIdInputs = ref<Record<string, string>>({});
 const assigningTeamId = ref<string | null>(null);
+const assigningClubIdTeamId = ref<string | null>(null);
 const assignError = ref<Record<string, string>>({});
+const clubIdError = ref<Record<string, string>>({});
 
 async function submitCreate() {
   const body: any = { name: form.value.name, group: form.value.group || undefined };
@@ -42,6 +46,21 @@ async function submitCaptain(teamId: string) {
     captainInputs.value[teamId] = '';
   }
   assigningTeamId.value = null;
+  await loadTeams();
+}
+
+async function submitClubId(teamId: string) {
+  const eaClubId = clubIdInputs.value[teamId]?.trim();
+  if (!eaClubId) return;
+  assigningClubIdTeamId.value = teamId;
+  clubIdError.value[teamId] = '';
+  const result = await updateTeam(teamId, { eaClubId });
+  if (!result) {
+    clubIdError.value[teamId] = 'No se pudo actualizar (revisa los datos)';
+  } else {
+    clubIdInputs.value[teamId] = '';
+  }
+  assigningClubIdTeamId.value = null;
   await loadTeams();
 }
 
@@ -104,7 +123,25 @@ function formatDate(iso?: string) {
                   Configurado el {{ formatDate(team.eaClubIdSetAt) }}
                 </div>
               </template>
-              <span v-else class="badge badge-ghost badge-sm">Sin eaClubId configurado</span>
+              <span v-else class="badge badge-ghost badge-sm mb-2">Sin eaClubId configurado</span>
+
+              <div class="flex items-center gap-2 mt-2">
+                <input
+                  v-model="clubIdInputs[team.id]"
+                  placeholder="Nuevo ID EA Club"
+                  class="input input-bordered input-xs w-36"
+                  @keyup.enter="submitClubId(team.id)"
+                />
+                <button
+                  class="btn btn-xs btn-primary"
+                  :class="{ 'loading loading-spinner': assigningClubIdTeamId === team.id }"
+                  :disabled="assigningClubIdTeamId === team.id"
+                  @click="submitClubId(team.id)"
+                >
+                  Actualizar ID
+                </button>
+              </div>
+              <p v-if="clubIdError[team.id]" class="text-error text-xs mt-1">{{ clubIdError[team.id] }}</p>
             </div>
 
             <!-- Columna Capitán -->

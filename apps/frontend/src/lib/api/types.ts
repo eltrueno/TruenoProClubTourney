@@ -29,7 +29,7 @@ export interface ICreateTeamInput {
   group?: string;
 }
 
-export type IUpdateTeamInput = Partial<Omit<ICreateTeamInput, 'name'>> & { name?: string };
+export type IUpdateTeamInput = Partial<Omit<ICreateTeamInput, 'name'>> & { name?: string; eaClubId?: string };
 
 
 /** Un partido en disputa, tal y como lo lista el panel de admin */

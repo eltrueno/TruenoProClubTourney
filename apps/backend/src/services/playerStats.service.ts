@@ -4,15 +4,19 @@ import type {
   IPlayerProfile,
 } from '@trueno-proclub-tourney/shared';
 import { SeriesModel, type IMatchPlayerDoc } from '../models/Series.model.js';
+import { PlayerStatsModel } from '../models/PlayerStats.model.js';
+import { eventBus, EVENTS } from './events.service.js';
 
 interface Accumulator {
   eaPlayerId: string;
   playerName: string;
   lastPlayedAt: number;
   matchesPlayed: number;
+  minutesPlayed: number;
   wins: number;
   losses: number;
   draws: number;
+  ties: number;
   goals: number;
   assists: number;
   shots: number;
@@ -26,6 +30,9 @@ interface Accumulator {
   redCards: number;
   manOfTheMatch: number;
   ratingSum: number;
+  hattricks: number;
+  pokers: number;
+  positionsPlayed: Record<string, number>;
 }
 
 function newAccumulator(eaPlayerId: string, playerName: string): Accumulator {
@@ -34,9 +41,11 @@ function newAccumulator(eaPlayerId: string, playerName: string): Accumulator {
     playerName,
     lastPlayedAt: 0,
     matchesPlayed: 0,
+    minutesPlayed: 0,
     wins: 0,
     losses: 0,
     draws: 0,
+    ties: 0,
     goals: 0,
     assists: 0,
     shots: 0,
@@ -50,34 +59,56 @@ function newAccumulator(eaPlayerId: string, playerName: string): Accumulator {
     redCards: 0,
     manOfTheMatch: 0,
     ratingSum: 0,
+    hattricks: 0,
+    pokers: 0,
+    positionsPlayed: {},
   };
 }
 
 function addStat(acc: Accumulator, stat: IMatchPlayerDoc, result: 'win' | 'loss' | 'draw', playedAt: number): void {
-  // Se queda con el gamertag mas reciente, por si ha cambiado de nombre
   if (playedAt >= acc.lastPlayedAt) {
     acc.playerName = stat.name;
     acc.lastPlayedAt = playedAt;
   }
 
-  acc.matchesPlayed += 1;
-  if (result === 'win') acc.wins += 1;
-  else if (result === 'loss') acc.losses += 1;
-  else acc.draws += 1;
+  const isWin = result === 'win';
+  const isLoss = result === 'loss';
+  const isTie = result === 'draw';
+  
+  const goals = Number(stat.goals) || 0;
+  const isHattrick = goals >= 3;
+  const isPoker = goals >= 4;
 
-  acc.goals += stat.goals;
-  acc.assists += stat.assists;
-  acc.shots += stat.shots;
-  acc.passAttempts += stat.passesMade;
-  acc.passesMade += stat.passesSuccess;
-  acc.tackleAttempts += stat.tacklesMade;
-  acc.tacklesMade += stat.tacklesSuccess;
-  acc.saves += stat.saves;
-  acc.goalsConceded += stat.goalsConceded;
+  acc.matchesPlayed += 1;
+  acc.minutesPlayed += Math.round((Number(stat.secondsPlayed) || 0) / 60);
+  
+  if (isWin) acc.wins += 1;
+  if (isLoss) acc.losses += 1;
+  if (isTie) {
+    acc.draws += 1;
+    acc.ties += 1;
+  }
+
+  acc.goals += goals;
+  acc.assists += Number(stat.assists) || 0;
+  acc.shots += Number(stat.shots) || 0;
+  acc.passAttempts += Number(stat.passesMade) || 0;
+  acc.passesMade += Number(stat.passesSuccess) || 0;
+  acc.tackleAttempts += Number(stat.tacklesMade) || 0;
+  acc.tacklesMade += Number(stat.tacklesSuccess) || 0;
+  acc.saves += Number(stat.saves) || 0;
+  acc.goalsConceded += Number(stat.goalsConceded) || 0;
   if (stat.cleanSheet) acc.cleanSheets += 1;
-  acc.redCards += stat.redCards;
+  acc.redCards += Number(stat.redCards) || 0;
   if (stat.manOfTheMatch) acc.manOfTheMatch += 1;
-  acc.ratingSum += stat.rating;
+  acc.ratingSum += Number(stat.rating) || 0;
+  
+  if (isHattrick) acc.hattricks += 1;
+  if (isPoker) acc.pokers += 1;
+
+  if (stat.position) {
+    acc.positionsPlayed[stat.position] = (acc.positionsPlayed[stat.position] || 0) + 1;
+  }
 }
 
 function toAggregateStats(acc: Accumulator): IPlayerAggregateStats {
@@ -87,8 +118,10 @@ function toAggregateStats(acc: Accumulator): IPlayerAggregateStats {
     eaPlayerId: acc.eaPlayerId,
     playerName: acc.playerName,
     matchesPlayed: acc.matchesPlayed,
+    minutesPlayed: acc.minutesPlayed,
     wins: acc.wins,
     losses: acc.losses,
+    ties: acc.ties,
     draws: acc.draws,
     goals: acc.goals,
     assists: acc.assists,
@@ -105,13 +138,24 @@ function toAggregateStats(acc: Accumulator): IPlayerAggregateStats {
     cleanSheets: acc.cleanSheets,
     redCards: acc.redCards,
     manOfTheMatch: acc.manOfTheMatch,
+    hattricks: acc.hattricks,
+    pokers: acc.pokers,
+    positionsPlayed: acc.positionsPlayed,
     avgRating: acc.matchesPlayed > 0 ? Math.round((acc.ratingSum / acc.matchesPlayed) * 100) / 100 : 0,
   };
 }
 
 /** Recorre todas las Series y devuelve, por cada match confirmado, sus playerStats con contexto */
-async function* iterConfirmedAppearances() {
-  const seriesList = await SeriesModel.find({ 'matches.status': 'confirmed' });
+async function* iterConfirmedAppearances(eaPlayerIds?: string[]) {
+  const query: any = { 'matches.status': 'confirmed' };
+  if (eaPlayerIds && eaPlayerIds.length > 0) {
+    query.$or = [
+      { 'matches.effective.teamA.players.eaId': { $in: eaPlayerIds } },
+      { 'matches.effective.teamB.players.eaId': { $in: eaPlayerIds } },
+    ];
+  }
+
+  const seriesList = await SeriesModel.find(query);
 
   for (const series of seriesList) {
     for (const match of series.matches) {
@@ -135,11 +179,13 @@ async function* iterConfirmedAppearances() {
       }
 
       for (const stat of match.effective.teamA.players) {
+        if (eaPlayerIds && eaPlayerIds.length > 0 && !eaPlayerIds.includes(stat.eaId)) continue;
         const result: 'win' | 'loss' | 'draw' = teamAWon ? 'win' : teamBWon ? 'loss' : 'draw';
         yield { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam: 'A' as const };
       }
       
       for (const stat of match.effective.teamB.players) {
+        if (eaPlayerIds && eaPlayerIds.length > 0 && !eaPlayerIds.includes(stat.eaId)) continue;
         const result: 'win' | 'loss' | 'draw' = teamBWon ? 'win' : teamAWon ? 'loss' : 'draw';
         yield { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam: 'B' as const };
       }
@@ -147,29 +193,51 @@ async function* iterConfirmedAppearances() {
   }
 }
 
-/** Stats agregadas de todos los jugadores que han aparecido en algun match confirmado */
-export async function getAllPlayerStats(): Promise<IPlayerAggregateStats[]> {
+export async function recalculateStatsForPlayers(eaPlayerIds: string[]): Promise<void> {
+  if (eaPlayerIds.length === 0) return;
   const acc = new Map<string, Accumulator>();
 
-  for await (const { stat, result, playedAt } of iterConfirmedAppearances()) {
+  for await (const { stat, result, playedAt } of iterConfirmedAppearances(eaPlayerIds)) {
     if (!acc.has(stat.eaId)) acc.set(stat.eaId, newAccumulator(stat.eaId, stat.name));
     addStat(acc.get(stat.eaId)!, stat, result, playedAt);
   }
 
-  return Array.from(acc.values())
-    .map(toAggregateStats)
-    .sort((a, b) => b.goals - a.goals || b.avgRating - a.avgRating);
+  const ops: any[] = [];
+  for (const eaId of eaPlayerIds) {
+    if (acc.has(eaId)) {
+      ops.push({
+        updateOne: {
+          filter: { _id: eaId },
+          update: { $set: toAggregateStats(acc.get(eaId)!) },
+          upsert: true,
+        }
+      });
+    } else {
+      ops.push({
+        deleteOne: { filter: { _id: eaId } }
+      });
+    }
+  }
+
+  if (ops.length > 0) {
+    await PlayerStatsModel.bulkWrite(ops);
+  }
 }
 
-/** Perfil de un jugador concreto: stats agregadas + historial de sus apariciones */
+/** Stats agregadas obtenidas directamente de la colección cacheada */
+export async function getAllPlayerStats(): Promise<IPlayerAggregateStats[]> {
+  const docs = await PlayerStatsModel.find().sort({ goals: -1, avgRating: -1 });
+  return docs;
+}
+
+/** Perfil de un jugador concreto: stats de la colección + historial de sus apariciones reconstruido */
 export async function getPlayerProfile(eaPlayerId: string): Promise<IPlayerProfile | null> {
-  const acc = newAccumulator(eaPlayerId, eaPlayerId);
+  const summaryDoc = await PlayerStatsModel.findById(eaPlayerId);
+  if (!summaryDoc) return null;
+
   const matches: (IPlayerMatchAppearance & { _playedAt: number })[] = [];
 
-  for await (const { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam } of iterConfirmedAppearances()) {
-    if (stat.eaId !== eaPlayerId) continue;
-
-    addStat(acc, stat, result, playedAt);
+  for await (const { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam } of iterConfirmedAppearances([eaPlayerId])) {
     matches.push({
       seriesId: series._id.toString(),
       stageId: series.stageId,
@@ -190,11 +258,21 @@ export async function getPlayerProfile(eaPlayerId: string): Promise<IPlayerProfi
     });
   }
 
-  if (acc.matchesPlayed === 0) return null;
-
   matches.sort((a, b) => b._playedAt - a._playedAt);
+  
+  const summary: IPlayerAggregateStats = summaryDoc.toObject ? summaryDoc.toObject() : summaryDoc;
+
   return {
-    summary: toAggregateStats(acc),
+    summary,
     matches: matches.map(({ _playedAt, ...appearance }) => appearance),
   };
 }
+
+// Escuchamos el evento para actualizar los stats en background de manera incremental
+eventBus.on(EVENTS.PLAYER_STATS_UPDATE_REQUESTED, async ({ eaPlayerIds }: { eaPlayerIds: string[] }) => {
+  try {
+    await recalculateStatsForPlayers(eaPlayerIds);
+  } catch (err) {
+    console.error('Error recalculating player stats for players:', eaPlayerIds, err);
+  }
+});
