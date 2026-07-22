@@ -27,7 +27,6 @@ window.addEventListener("pageshow", async (e) => {
            <Loader class="scale-125 mb-4" />
            <div class="space-y-2">
              <p class="text-sm font-black tracking-widest uppercase opacity-70 animate-pulse">Verificando sesión</p>
-             <p class="text-xs opacity-40">Por favor, espera un momento...</p>
            </div>
         </div>
 

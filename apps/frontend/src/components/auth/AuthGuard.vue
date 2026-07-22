@@ -18,16 +18,9 @@ onMounted(() => {
 <template>
   <div v-if="!isMounted || isPending">
     <slot name="pending">
-      <div class="w-full min-h-[80vh] flex flex-col items-center justify-center gap-6">
-        <Loader class="scale-125 mb-4" />
-    <div class="space-y-2 text-center animate-pulse">
-      <p class="text-sm font-black tracking-[0.3em] uppercase opacity-70 text-base-content">Verificando sesión</p>
-      <div class="flex justify-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-        <span class="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
-        <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-      </div>
-    </div>
+      <div class="w-full min-h-[80vh] flex flex-col items-center justify-center text-center gap-6">
+        <Loader class="scale-125" />
+        <p class="text-sm font-black tracking-[0.3em] uppercase opacity-70 text-base-content">Verificando sesión...</p>
       </div>
     </slot>
   </div>
