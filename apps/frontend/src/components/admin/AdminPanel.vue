@@ -6,6 +6,7 @@ import TeamsTab from './TeamsTab.vue';
 import StagesTab from './StagesTab.vue';
 import DisputesTab from './DisputesTab.vue';
 import SettingsTab from './SettingsTab.vue';
+import AppError from '../ui/Error.vue';
 
 const { isAdmin } = useAuth();
 const tab = ref<'teams' | 'stages' | 'disputes' | 'settings'>('teams');
@@ -14,8 +15,8 @@ const tab = ref<'teams' | 'stages' | 'disputes' | 'settings'>('teams');
 <template>
   <AuthGuard>
     <template #loggedin>
-      <div v-if="!isAdmin" class="alert alert-warning max-w-md mx-auto">
-        No tienes permisos de administrador.
+      <div v-if="!isAdmin" class="w-full max-w-md mx-auto">
+        <AppError error="No tienes permisos de administrador" />
       </div>
 
       <div v-else class="w-full">

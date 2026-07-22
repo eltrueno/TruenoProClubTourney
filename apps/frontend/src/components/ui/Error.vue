@@ -17,7 +17,9 @@ const errorMessage = computed(() => {
       alt="500 server error image" 
       class="w-full max-w-75 mb-6 drop-shadow-sm" 
     />
-    <h2 class="text-2xl font-black mb-3"> El VAR está revisando la jugada... acción anulada </h2>
+    <h2 class="text-2xl font-black mb-3">
+      El VAR está revisando la jugada...:<br> Acción anulada
+    </h2>
     <p class="text-lg opacity-70 max-w-md">
       {{ errorMessage }}
     </p>
