@@ -104,17 +104,13 @@ function parseTeamPlayers(players: Record<string, IMatchClubPlayer> | undefined)
 
       goalsConceded: Number(raw.goalsconceded ?? 0),
       redCards: Number(p.redcards ?? 0),
-      cleanSheet: raw.cleansheetsany === '1' || raw.cleansheetsgk === '1',
+      cleanSheet: raw.cleansheetsany === '1' || raw.cleansheetsgk === '1' || Number(p.goalsconceded ?? 0) === 0,
 
-      passesMade: Number(p.passesmade ?? 0),
-      passesSuccess: Number(p.passattempts ?? 0) > 0
-        ? Math.round((Number(p.passesmade ?? 0) / Number(p.passattempts ?? 1)) * 100)
-        : 0,
+      passesMade: Number(p.passattempts ?? 0),
+      passesSuccess: Number(p.passesmade ?? 0),
 
-      tacklesMade: Number(p.tacklesmade ?? 0),
-      tacklesSuccess: Number(p.tackleattempts ?? 0) > 0
-        ? Math.round((Number(p.tacklesmade ?? 0) / Number(p.tackleattempts ?? 1)) * 100)
-        : 0,
+      tacklesMade: Number(p.tackleattempts ?? 0),
+      tacklesSuccess: Number(p.tacklesmade ?? 0),
 
       saves: Number(p.saves ?? 0),
       goodDirectionSaves: Number(raw.goodDirectionSaves ?? 0),

@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue"
 import { useAuth } from "@/composables/useAuth"
 import LoginWall from "@/components/auth/LoginWall.vue"
+import Loader from "@/components/layout/Loader.vue"
 const props = defineProps<{
   role?: string
 }>()
@@ -18,10 +19,7 @@ onMounted(() => {
   <div v-if="!isMounted || isPending">
     <slot name="pending">
       <div class="w-full min-h-[80vh] flex flex-col items-center justify-center gap-6">
-    <div class="relative">
-      <div class="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150"></div>
-      <span class="loading loading-ring loading-lg text-primary scale-150 relative z-10"></span>
-    </div>
+        <Loader class="scale-125 mb-4" />
     <div class="space-y-2 text-center animate-pulse">
       <p class="text-sm font-black tracking-[0.3em] uppercase opacity-70 text-base-content">Verificando sesión</p>
       <div class="flex justify-center gap-1">

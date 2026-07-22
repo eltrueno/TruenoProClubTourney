@@ -74,14 +74,14 @@ function addStat(acc: Accumulator, stat: IMatchPlayerDoc, result: 'win' | 'loss'
   const isWin = result === 'win';
   const isLoss = result === 'loss';
   const isTie = result === 'draw';
-  
+
   const goals = Number(stat.goals) || 0;
   const isHattrick = goals >= 3;
   const isPoker = goals >= 4;
 
   acc.matchesPlayed += 1;
   acc.minutesPlayed += Math.round((Number(stat.secondsPlayed) || 0) / 60);
-  
+
   if (isWin) acc.wins += 1;
   if (isLoss) acc.losses += 1;
   if (isTie) {
@@ -102,7 +102,7 @@ function addStat(acc: Accumulator, stat: IMatchPlayerDoc, result: 'win' | 'loss'
   acc.redCards += Number(stat.redCards) || 0;
   if (stat.manOfTheMatch) acc.manOfTheMatch += 1;
   acc.ratingSum += Number(stat.rating) || 0;
-  
+
   if (isHattrick) acc.hattricks += 1;
   if (isPoker) acc.pokers += 1;
 
@@ -161,16 +161,16 @@ async function* iterConfirmedAppearances(eaPlayerIds?: string[]) {
     for (const match of series.matches) {
       if (match.status !== 'confirmed') continue;
       if (!match.effective.teamA || !match.effective.teamB) continue;
-      
+
       const scoreA = match.effective.teamA.score;
       const scoreB = match.effective.teamB.score;
       if (scoreA == null || scoreB == null) continue;
-      
+
       const penA = match.effective.teamA.penaltiesScore ?? 0;
       const penB = match.effective.teamB.penaltiesScore ?? 0;
 
       const playedAt = (match.original?.fetchedAt ?? series.createdAt).getTime();
-      
+
       let teamAWon = scoreA > scoreB;
       let teamBWon = scoreB > scoreA;
       if (scoreA === scoreB) {
@@ -183,7 +183,7 @@ async function* iterConfirmedAppearances(eaPlayerIds?: string[]) {
         const result: 'win' | 'loss' | 'draw' = teamAWon ? 'win' : teamBWon ? 'loss' : 'draw';
         yield { series, match, stat, scoreA, scoreB, result, playedAt, playedTeam: 'A' as const };
       }
-      
+
       for (const stat of match.effective.teamB.players) {
         if (eaPlayerIds && eaPlayerIds.length > 0 && !eaPlayerIds.includes(stat.eaId)) continue;
         const result: 'win' | 'loss' | 'draw' = teamBWon ? 'win' : teamAWon ? 'loss' : 'draw';
@@ -259,7 +259,7 @@ export async function getPlayerProfile(eaPlayerId: string): Promise<IPlayerProfi
   }
 
   matches.sort((a, b) => b._playedAt - a._playedAt);
-  
+
   const summary: IPlayerAggregateStats = summaryDoc.toObject ? summaryDoc.toObject() : summaryDoc;
 
   return {
