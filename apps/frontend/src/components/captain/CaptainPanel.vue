@@ -15,7 +15,7 @@ const loading = ref(true);
 const globalError = ref<string | null>(null);
 
 const myTeam = ref<ITeam | null>(null);
-const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number } | null>(null);
+const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number; captainsCanSetMatches: boolean } | null>(null);
 
 // Modal "Cambiar EA Club ID"
 const eaClubIdInput = ref('');
@@ -95,6 +95,9 @@ const eaClubIdCooldownRemainingHours = computed(() => {
 const canChangeEaClubId = computed(() =>
   settings.value?.captainsCanChangeEaClubId !== false && eaClubIdCooldownRemainingHours.value === 0
 );
+
+const canSetMatches = computed(() => settings.value?.captainsCanSetMatches !== false);
+
 function openEaClubIdModal() {
   eaClubIdInput.value = myTeam.value?.eaClubId ?? '';
   eaClubIdError.value = '';
@@ -402,7 +405,7 @@ function formatMatchScore(teamData: any) {
                     <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
                     <span v-if="s.mySide === 'A'" class="badge badge-primary badge-xs">Tú</span>
                   </div>
-                  <span v-if="(s.teamA as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamA as any).eaClubName }}</span>
+                  <span v-if="(s.teamA as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamA as any).eaClubName ? (s.teamA as any).eaClubName : '¿?' }}</span>
                 </div>
 
                 <span class="opacity-30 text-sm font-normal mx-2">vs</span>
@@ -412,7 +415,7 @@ function formatMatchScore(teamData: any) {
                     <span v-if="s.mySide === 'B'" class="badge badge-primary badge-xs">Tú</span>
                     <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
                   </div>
-                  <span v-if="(s.teamB as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamB as any).eaClubName }}</span>
+                  <span v-if="(s.teamB as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamB as any).eaClubName ? (s.teamB as any).eaClubName : '¿?' }}</span>
                 </div>
                 <TeamLogo size="md" :url="teamBadge(s.teamB as any)" />
               </div>
@@ -463,13 +466,31 @@ function formatMatchScore(teamData: any) {
                 <!-- Acciones -->
                 <div class="flex flex-col gap-2 shrink-0 items-end">
                   <!-- Sin seleccionar: botón añadir -->
-                  <button
+                   
+
+                  <div
                     v-if="match.status === 'unselected' && myTeam?.eaClubId"
-                    class="btn btn-sm btn-primary"
-                    @click="openAddModal(s.id, match.position, myTeam.eaClubId)"
-                  >
-                    Añadir partido
-                  </button>
+                    class="tooltip tooltip-left"
+                    :data-tip="
+                      settings && !settings.captainsCanChangeEaClubId
+                        ? 'Desactivado por el admin'
+                        : eaClubIdCooldownRemainingHours > 0
+                          ? `Podrás cambiarlo en ${eaClubIdCooldownRemainingHours}h`
+                          : undefined
+                    ">
+
+                          <button
+                            v-if="match.status === 'unselected' && myTeam?.eaClubId"
+                            class="btn btn-sm btn-primary"
+                            @click="openAddModal(s.id, match.position, myTeam.eaClubId)"
+                            :disabled="!canSetMatches"
+                            :title="!canSetMatches ? 'Desactivado temporalmente' : ''"
+                          >
+                            Añadir partido
+                          </button>
+
+                  </div>
+                  
                   <div v-else-if="match.status === 'unselected'" class="text-xs text-warning max-w-40 text-right">
                     Configura el eaClubId de tu equipo antes de reportar
                   </div>
@@ -534,9 +555,6 @@ function formatMatchScore(teamData: any) {
         <ul v-if="clubResults.length" class="menu bg-base-200 rounded-box mb-3 max-h-48 overflow-y-auto flex-nowrap">
           <li v-for="c in clubResults" :key="c.clubId">
             <a @click="pickClub(c.clubId)" class="flex items-center gap-2">
-              {{ c.teamId }}
-              {{ c.crestAssetId }}
-              {{ c.customKit }}
               <img v-if="eaCrestUrl(c.teamId, c.crestAssetId, c.customKit)" :src="eaCrestUrl(c.teamId, c.crestAssetId, c.customKit)!" class="w-6 h-6 object-contain shrink-0" />
               <div v-else class="w-6 h-6 rounded bg-base-300 shrink-0"></div>
               <span class="flex-1">{{ c.name }}</span>

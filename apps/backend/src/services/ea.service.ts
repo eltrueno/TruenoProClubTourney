@@ -2,6 +2,7 @@ import PQueue from 'p-queue';
 import { club, type TPlatformType } from '@trueno-proclub-tourney/eafcapi';
 import type { IClubMatches, IMatchClubPlayer, IMatchClub } from '@trueno-proclub-tourney/eafcapi/dist/model/club.js';
 import type { IEaCandidateMatch, IMatchPlayer, IMatchTeamData, ITeamMatchStats, PlayerPosition } from '@trueno-proclub-tourney/shared';
+import { getSettings } from './settings.service.js';
 
 const PLATFORM: TPlatformType = 'common-gen5';
 const CACHE_TTL_MS = 3 * 60 * 1000;
@@ -52,6 +53,13 @@ export async function searchClubs(query: string): Promise<{ clubId: string; name
 }
 
 export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandidateMatch[]> {
+
+  const settings = await getSettings();
+  if (!settings.captainsCanSetMatches) {
+    throw new Error('CAPTAINS_ADD_MATCHES_DISABLED');
+  }
+
+
   const key = `club-matches:${eaClubId}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;

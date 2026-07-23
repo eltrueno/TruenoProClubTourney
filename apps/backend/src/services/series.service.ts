@@ -9,6 +9,7 @@ import type {
 import { SeriesModel, type ISeriesDoc, type IMatchDoc, type IMatchPlayerDoc, type IMatchTeamDataDoc } from '../models/Series.model.js';
 import { getTeamIdForCaptain } from './captain.service.js';
 import { eventBus, EVENTS } from './events.service.js';
+import { getSettings } from './settings.service.js';
 
 function toIMatch(doc: IMatchDoc): IMatch {
   return JSON.parse(JSON.stringify(doc)); // subdocumento plano, basta serializar
@@ -238,6 +239,10 @@ export async function selectCandidateForMatch(
   requesterUserId: string,
   candidate: IEaCandidateMatch
 ): Promise<IMySeriesResponse> {
+  const settings = await getSettings();
+  if (!settings.captainsCanSetMatches) {
+    throw new Error('CAPTAINS_ADD_MATCHES_DISABLED');
+  }
   const series = await SeriesModel.findById(seriesId).populate<{ teamA: any; teamB: any }>('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
@@ -292,6 +297,12 @@ export async function createManualMatch(
   requesterUserId: string,
   input: { teamA: IMatchTeamData; teamB: IMatchTeamData }
 ): Promise<IMySeriesResponse> {
+
+  const settings = await getSettings();
+  if (!settings.captainsCanSetMatches) {
+    throw new Error('CAPTAINS_ADD_MATCHES_DISABLED');
+  }
+
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
@@ -321,6 +332,12 @@ export async function confirmMatch(
   position: number,
   requesterUserId: string
 ): Promise<IMySeriesResponse> {
+
+  const settings = await getSettings();
+  if (!settings.captainsCanSetMatches) {
+    throw new Error('CAPTAINS_ADD_MATCHES_DISABLED');
+  }
+
   const series = await SeriesModel.findById(seriesId).populate('teamA teamB');
   if (!series) throw new ServiceError('NOT_FOUND', 'Serie no encontrada');
 
@@ -345,7 +362,7 @@ export async function confirmMatch(
   recomputeSeriesStatus(series);
 
   await series.save();
-  
+
   if (match.status === 'confirmed') {
     const players = [
       ...(match.effective.teamA?.players || []),
@@ -355,7 +372,7 @@ export async function confirmMatch(
       eventBus.emitEvent(EVENTS.PLAYER_STATS_UPDATE_REQUESTED, { eaPlayerIds: Array.from(new Set(players)) });
     }
   }
-  
+
   return toMySeriesResponse(series, side);
 }
 
@@ -439,7 +456,7 @@ export async function editMatch(
 
   recomputeSeriesStatus(series);
   await series.save();
-  
+
   if (wasConfirmed) {
     const newPlayers = [
       ...(match.effective.teamA?.players || []),

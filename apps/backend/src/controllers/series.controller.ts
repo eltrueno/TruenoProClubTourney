@@ -130,6 +130,9 @@ async function maybePropagate(seriesId: string, stageId: string, status: string)
 }
 
 function handleServiceError(err: unknown, res: Response) {
+  if (err instanceof Error && err.message === 'CAPTAINS_ADD_MATCHES_DISABLED') {
+    return apiError(res, 403, 'CAPTAINS_ADD_MATCHES_DISABLED', 'No puedes añadir partidos en este momento');
+  }
   if (err instanceof seriesService.ServiceError) {
     const statusByCode: Record<string, number> = {
       NOT_FOUND: 404,

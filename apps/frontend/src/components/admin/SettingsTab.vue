@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
 import Loader from '@/components/layout/Loader.vue';
 
-const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number } | null>(null);
+const settings = ref<{ captainsCanChangeEaClubId: boolean; eaClubIdChangeCooldownHours: number, captainsCanSetMatches: boolean } | null>(null);
 const saving = ref(false);
 const error = ref('');
 
@@ -37,6 +37,20 @@ async function saveCooldown() {
     saving.value = false;
   }
 }
+
+async function toggleCaptainsCanSetMatches() {
+  if (!settings.value) return;
+  saving.value = true;
+  error.value = '';
+  try {
+    settings.value = await api.settings.admin.update({ captainsCanSetMatches: !settings.value.captainsCanSetMatches });
+  } catch (e) {
+    error.value = translateApiError(e);
+  } finally {
+    saving.value = false;
+  }
+}
+
 </script>
 
 <template>
@@ -59,6 +73,14 @@ async function saveCooldown() {
         <input v-model.number="settings.eaClubIdChangeCooldownHours" type="number" min="0" class="input input-bordered input-sm w-24" />
         <button class="btn btn-sm btn-primary" :disabled="saving" @click="saveCooldown">Guardar</button>
       </div>
+    </div>
+
+    <div class="flex items-center justify-between bg-base-200 rounded-lg p-4">
+      <div>
+        <p class="font-bold">Capitanes pueden establecer resultados de los partidos</p>
+        <p class="text-xs opacity-60">Si lo desactivas, NO se podrán reportar partidos. Pensado para que nadie pueda trollear en dias/horas fuera de horario</p>
+      </div>
+      <input type="checkbox" class="toggle toggle-primary" :checked="settings.captainsCanSetMatches" :disabled="saving" @change="toggleCaptainsCanSetMatches" />
     </div>
 
     <p v-if="error" class="text-error text-sm">{{ error }}</p>
