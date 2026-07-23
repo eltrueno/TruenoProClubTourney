@@ -140,11 +140,11 @@ watch(clubQuery, (q) => {
   }, 400);
 });
 
-function pickClub(clubId: string) {
+function pickClub(clubId: string, clubName?: string) {
   selectedClubId.value = clubId;
   eaClubIdInput.value = clubId;
   clubResults.value = [];
-  clubQuery.value = '';
+  clubQuery.value = clubName ?? '';
 }
 
 async function saveEaClubId() {
@@ -405,7 +405,7 @@ function formatMatchScore(teamData: any) {
                     <span :class="s.mySide === 'A' ? 'text-primary' : ''">{{ (s.teamA as any)?.name ?? 'TBD' }}</span>
                     <span v-if="s.mySide === 'A'" class="badge badge-primary badge-xs">Tú</span>
                   </div>
-                  <span v-if="(s.teamA as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamA as any).eaClubName ? (s.teamA as any).eaClubName : '¿?' }}</span>
+                  <span class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamA as any).eaClubName ? (s.teamA as any).eaClubName : '¿?' }}</span>
                 </div>
 
                 <span class="opacity-30 text-sm font-normal mx-2">vs</span>
@@ -415,7 +415,7 @@ function formatMatchScore(teamData: any) {
                     <span v-if="s.mySide === 'B'" class="badge badge-primary badge-xs">Tú</span>
                     <span :class="s.mySide === 'B' ? 'text-primary' : ''">{{ (s.teamB as any)?.name ?? 'TBD' }}</span>
                   </div>
-                  <span v-if="(s.teamB as any)?.eaClubName" class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamB as any).eaClubName ? (s.teamB as any).eaClubName : '¿?' }}</span>
+                  <span class="text-[10px] font-normal opacity-60 bg-base-200 px-1.5 rounded uppercase tracking-wider mt-0.5" title="Nombre del club en EA Sports FC">EA: {{ (s.teamB as any).eaClubName ? (s.teamB as any).eaClubName : '¿?' }}</span>
                 </div>
                 <TeamLogo size="md" :url="teamBadge(s.teamB as any)" />
               </div>
@@ -571,7 +571,7 @@ function formatMatchScore(teamData: any) {
         <details class="mb-2">
           <summary class="text-xs opacity-60 cursor-pointer">¿No lo encuentras? Pon el ID a mano</summary>
           <p class="text-xs opacity-60 my-2">
-            Es el ID numérico de tu club en EA FC, el que aparece en la URL del club en el companion app.
+            Es el ID numérico de tu club en EA FC, puedes obtenerlo en numerosas web de la comunidad de clubes pro
           </p>
           <input
             v-model="eaClubIdInput"
