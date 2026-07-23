@@ -12,10 +12,10 @@ export async function getTournamentConfig(_req: Request, res: Response) {
 }
 
 export async function updateSettings(req: Request, res: Response) {
-  const { captainsCanChangeEaClubId, eaClubIdChangeCooldownHours, captainsCanAddMatches } = req.body ?? {};
+  const { captainsCanChangeEaClubId, eaClubIdChangeCooldownHours, captainsCanSetMatches } = req.body ?? {};
   const patch: Record<string, unknown> = {};
   if (typeof captainsCanChangeEaClubId === 'boolean') patch.captainsCanChangeEaClubId = captainsCanChangeEaClubId;
   if (typeof eaClubIdChangeCooldownHours === 'number' && eaClubIdChangeCooldownHours >= 0) { patch.eaClubIdChangeCooldownHours = eaClubIdChangeCooldownHours; }
-  if (typeof captainsCanAddMatches === 'boolean') patch.captainsCanAddMatches = captainsCanAddMatches;
+  if (typeof captainsCanSetMatches === 'boolean') patch.captainsCanSetMatches = captainsCanSetMatches;
   res.json(await settingsService.updateSettings(patch));
 }
