@@ -534,7 +534,7 @@ function formatMatchScore(teamData: any) {
         <ul v-if="clubResults.length" class="menu bg-base-200 rounded-box mb-3 max-h-48 overflow-y-auto flex-nowrap">
           <li v-for="c in clubResults" :key="c.clubId">
             <a @click="pickClub(c.clubId)" class="flex items-center gap-2">
-              <img v-if="eaCrestUrl(c.crestAssetId)" :src="eaCrestUrl(c.crestAssetId)!" class="w-6 h-6 object-contain shrink-0" />
+              <img v-if="eaCrestUrl(c.teamId, c.crestAssetId, c.customKit)" :src="eaCrestUrl(c.teamId, c.crestAssetId, c.customKit)!" class="w-6 h-6 object-contain shrink-0" />
               <div v-else class="w-6 h-6 rounded bg-base-300 shrink-0"></div>
               <span class="flex-1">{{ c.name }}</span>
               <span class="text-xs opacity-40 font-mono">ID {{ c.clubId }}</span>
