@@ -20,5 +20,5 @@ export const api = {
 };
 
 export { ApiError } from './client';
-export { flagUrl, teamBadge } from './visuals';
+export { flagUrl, teamBadge, eaCrestUrl } from './visuals';
 export type * from './types';

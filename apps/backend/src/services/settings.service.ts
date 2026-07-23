@@ -3,6 +3,7 @@ import { SettingsModel, getSettings as getSettingsDoc } from '../models/Settings
 export interface IPublicSettings {
   captainsCanChangeEaClubId: boolean;
   eaClubIdChangeCooldownHours: number;
+  captainsCanSetMatches: boolean;
 }
 
 export async function getSettings(): Promise<IPublicSettings> {
@@ -10,6 +11,7 @@ export async function getSettings(): Promise<IPublicSettings> {
   return {
     captainsCanChangeEaClubId: doc.captainsCanChangeEaClubId,
     eaClubIdChangeCooldownHours: doc.eaClubIdChangeCooldownHours,
+    captainsCanSetMatches: doc.captainsCanSetMatches,
   };
 }
 
@@ -19,5 +21,6 @@ export async function updateSettings(patch: Partial<IPublicSettings>): Promise<I
   return {
     captainsCanChangeEaClubId: doc!.captainsCanChangeEaClubId,
     eaClubIdChangeCooldownHours: doc!.eaClubIdChangeCooldownHours,
+    captainsCanSetMatches: doc!.captainsCanSetMatches,
   };
 }

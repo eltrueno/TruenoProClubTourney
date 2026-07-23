@@ -31,6 +31,24 @@ export async function getClubName(eaClubId: string): Promise<string | undefined>
   return info?.name;
 }
 
+/** Busca clubes por nombre en EA, para que el capitán no tenga que saber su eaClubId de memoria. */
+export async function searchClubs(query: string): Promise<{ clubId: string; name: string; regionId: number; crestAssetId?: string }[]> {
+  const results = await eaQueue.add(() =>
+    withRetry(() => club.getClubSearch(PLATFORM, query))
+  );
+  // getClubSearch esta mal tipado en eafcapi (dice objeto, en realidad es array)
+  const list = (results ?? []) as unknown as {
+    clubId: string;
+    clubInfo: { name: string; regionId: number; customKit?: { crestAssetId?: string } };
+  }[];
+  return list.map((r) => ({
+    clubId: r.clubId,
+    name: r.clubInfo.name,
+    regionId: r.clubInfo.regionId,
+    crestAssetId: r.clubInfo.customKit?.crestAssetId,
+  }));
+}
+
 export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandidateMatch[]> {
   const key = `club-matches:${eaClubId}`;
   const cached = cache.get(key);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import type { ISeries, IEaCandidateMatch, ITeam } from '@trueno-proclub-tourney/shared';
-import { api, teamBadge, ApiError } from '@/lib/api';
+import { api, teamBadge, eaCrestUrl, ApiError } from '@/lib/api';
 import { translateApiError } from '@/i18n/translations';
 import AppError from '@/components/ui/Error.vue';
 import AuthGuard from '@/components/auth/AuthGuard.vue';
@@ -98,11 +98,50 @@ const canChangeEaClubId = computed(() =>
 function openEaClubIdModal() {
   eaClubIdInput.value = myTeam.value?.eaClubId ?? '';
   eaClubIdError.value = '';
+  clubQuery.value = '';
+  clubResults.value = [];
+  selectedClubId.value = null;
   (document.getElementById('ea_modal') as HTMLDialogElement | null)?.showModal();
 }
 
 function closeEaModal() {
   (document.getElementById('ea_modal') as HTMLDialogElement | null)?.close();
+}
+
+// Búsqueda de club por nombre, para que el capitán no tenga que saber su eaClubId
+const clubQuery = ref('');
+const clubResults = ref<import('@trueno-proclub-tourney/shared').IEaClubSearchResult[]>([]);
+const clubSearching = ref(false);
+const clubSearchError = ref('');
+const selectedClubId = ref<string | null>(null);
+let clubSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(clubQuery, (q) => {
+  selectedClubId.value = null;
+  clubSearchError.value = '';
+  if (clubSearchTimeout) clearTimeout(clubSearchTimeout);
+  if (q.trim().length < 3) {
+    clubResults.value = [];
+    return;
+  }
+  clubSearchTimeout = setTimeout(async () => {
+    clubSearching.value = true;
+    try {
+      clubResults.value = await api.teams.searchEaClub(q.trim());
+    } catch (e) {
+      clubSearchError.value = translateApiError(e);
+      clubResults.value = [];
+    } finally {
+      clubSearching.value = false;
+    }
+  }, 400);
+});
+
+function pickClub(clubId: string) {
+  selectedClubId.value = clubId;
+  eaClubIdInput.value = clubId;
+  clubResults.value = [];
+  clubQuery.value = '';
 }
 
 async function saveEaClubId() {
@@ -475,21 +514,52 @@ function formatMatchScore(teamData: any) {
     <dialog id="ea_modal" class="modal">
       <div class="modal-box max-w-sm">
         <h3 class="font-bold text-lg mb-2">EA Club ID de tu equipo</h3>
-        <p class="text-xs opacity-60 mb-3">
-          Es el ID numérico de tu club en EA FC, el que aparece en la URL del club en el companion app.
-        </p>
         <div v-if="settings && !settings.captainsCanChangeEaClubId" class="alert alert-warning text-sm mb-3">
           El admin ha desactivado temporalmente los cambios de EA Club ID.
         </div>
         <div v-else-if="eaClubIdCooldownRemainingHours > 0" class="alert alert-warning text-sm mb-3">
           Ya cambiaste el ID hace poco. Podrás volver a cambiarlo en {{ eaClubIdCooldownRemainingHours }}h.
         </div>
+
+        <!-- Buscador por nombre -->
+        <p class="text-xs opacity-60 mb-2">Busca tu club por nombre:</p>
         <input
-          v-model="eaClubIdInput"
-          placeholder="Ej: 1234567"
+          v-model="clubQuery"
+          placeholder="Nombre del club..."
           class="input input-bordered w-full mb-2"
           :disabled="!canChangeEaClubId"
         />
+        <div v-if="clubSearching" class="text-xs opacity-50 mb-2">Buscando...</div>
+        <p v-if="clubSearchError" class="text-error text-xs mb-2">{{ clubSearchError }}</p>
+        <ul v-if="clubResults.length" class="menu bg-base-200 rounded-box mb-3 max-h-48 overflow-y-auto flex-nowrap">
+          <li v-for="c in clubResults" :key="c.clubId">
+            <a @click="pickClub(c.clubId)" class="flex items-center gap-2">
+              <img v-if="eaCrestUrl(c.crestAssetId)" :src="eaCrestUrl(c.crestAssetId)!" class="w-6 h-6 object-contain shrink-0" />
+              <div v-else class="w-6 h-6 rounded bg-base-300 shrink-0"></div>
+              <span class="flex-1">{{ c.name }}</span>
+              <span class="text-xs opacity-40 font-mono">ID {{ c.clubId }}</span>
+            </a>
+          </li>
+        </ul>
+
+        <div v-if="selectedClubId" class="alert alert-success text-sm mb-3">
+          Club seleccionado: ID {{ selectedClubId }}
+        </div>
+
+        <!-- Fallback manual -->
+        <details class="mb-2">
+          <summary class="text-xs opacity-60 cursor-pointer">¿No lo encuentras? Pon el ID a mano</summary>
+          <p class="text-xs opacity-60 my-2">
+            Es el ID numérico de tu club en EA FC, el que aparece en la URL del club en el companion app.
+          </p>
+          <input
+            v-model="eaClubIdInput"
+            placeholder="Ej: 1234567"
+            class="input input-bordered w-full"
+            :disabled="!canChangeEaClubId"
+          />
+        </details>
+
         <p v-if="eaClubIdError" class="text-error text-xs mb-2">{{ eaClubIdError }}</p>
         <div class="modal-action">
           <button class="btn btn-sm btn-ghost" @click="closeEaModal">Cancelar</button>

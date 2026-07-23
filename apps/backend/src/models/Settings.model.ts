@@ -12,6 +12,7 @@ const settingsSchema = new Schema<ISettingsDoc>({
   _id: { type: String, default: SETTINGS_ID },
   captainsCanChangeEaClubId: { type: Boolean, default: true },
   eaClubIdChangeCooldownHours: { type: Number, default: 24 },
+  captainsCanSetMatches: { type: Boolean, default: true },
 });
 
 export const SettingsModel = model<ISettingsDoc>('Settings', settingsSchema);

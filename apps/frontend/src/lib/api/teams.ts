@@ -1,5 +1,5 @@
-import type { ITeam } from '@trueno-proclub-tourney/shared';
-import { apiFetch } from './client';
+import type { ITeam, IEaClubSearchResult } from '@trueno-proclub-tourney/shared';
+import { apiFetch, toQueryString } from './client';
 import type { ICreateTeamInput, IUpdateTeamInput } from './types';
 
 export const teamsApi = {
@@ -9,6 +9,8 @@ export const teamsApi = {
 
   // ── Capitán ──────────────────────────────────────────────────────────────
   getMine: () => apiFetch<ITeam>('/teams/mine'),
+  searchEaClub: (query: string) =>
+    apiFetch<IEaClubSearchResult[]>(`/teams/ea-club-search${toQueryString({ query })}`),
   setEaClubId: (teamId: string, eaClubId: string) =>
     apiFetch<ITeam>(`/teams/${teamId}/ea-club`, { method: 'PATCH', body: { eaClubId } }),
 

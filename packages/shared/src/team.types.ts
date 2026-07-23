@@ -26,3 +26,12 @@ export interface ITeamCreateInput {
   logoUrl?: string;
   group?: string;
 }
+
+/** Resultado de buscar un club por nombre en EA, para que el capitán elija el suyo sin saber el eaClubId */
+export interface IEaClubSearchResult {
+  clubId: string;
+  name: string;
+  regionId: number;
+  /** Id del escudo, para construir la URL de imagen con eaCrestUrl() */
+  crestAssetId?: string;
+}

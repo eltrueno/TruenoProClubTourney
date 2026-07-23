@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import * as teamService from '../services/team.service.js';
 import * as captainService from '../services/captain.service.js';
+import * as eaService from '../services/ea.service.js';
 
 function apiError(res: Response, httpStatus: number, code: string, message: string) {
   return res.status(httpStatus).json({ status: { code, message } });
@@ -52,6 +53,15 @@ export async function assignCaptain(req: Request, res: Response) {
 export async function removeCaptain(req: Request, res: Response) {
   await teamService.removeTeamCaptain(req.params.id);
   res.status(204).send();
+}
+
+export async function searchEaClub(req: Request, res: Response) {
+  const { query } = req.query;
+  if (!query || typeof query !== 'string' || query.trim().length < 3) {
+    return apiError(res, 400, 'BAD_REQUEST', 'Escribe al menos 3 caracteres');
+  }
+  const results = await eaService.searchClubs(query.trim());
+  res.json(results);
 }
 
 export async function setEaClubId(req: Request, res: Response) {
