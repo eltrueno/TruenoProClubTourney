@@ -53,13 +53,6 @@ export async function searchClubs(query: string): Promise<{ clubId: string; name
 }
 
 export async function listRecentClubMatches(eaClubId: string): Promise<IEaCandidateMatch[]> {
-
-  const settings = await getSettings();
-  if (!settings.captainsCanSetMatches) {
-    throw new Error('CAPTAINS_ADD_MATCHES_DISABLED');
-  }
-
-
   const key = `club-matches:${eaClubId}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
