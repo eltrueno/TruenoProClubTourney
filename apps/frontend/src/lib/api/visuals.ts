@@ -10,9 +10,6 @@ export function flagUrl(countryCode: string): string {
  * Nota: el hash de versión de la URL es fijo, tocará actualizarlo si EA cambia de temporada/juego.
  */
 export function eaCrestUrl(teamId: number | undefined | null, crestAssetId: string | undefined | null, customKit: boolean | undefined | null): string | null {
-  console.log("customKit =", customKit, typeof customKit);
-  console.log("teamId =", teamId);
-  console.log("crestAssetId =", crestAssetId);
   const crestId = customKit ? crestAssetId : teamId
   if (!crestId) return null;
   return `https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l${crestId}.png`;
