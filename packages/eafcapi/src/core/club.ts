@@ -17,7 +17,7 @@ export const getfifa19ClubStats = (clubId: number) => get(`clubs/${clubId}/stats
 export const getfifa19ClubMatchHistory = (clubId: number) => get(`clubs/${clubId}/matches`)
 export const getfifa19ClubInfo = (clubId: number) => get(`clubs/${clubId}/info`) */
 
-export const getClubSearch = (platform: TPlatformType, query: string) => getParamExt<IClubSearch>(platform, 'clubs/search', { clubName: query })
+export const getClubSearch = (platform: TPlatformType, query: string) => getParamExt<IClubSearch>(platform, 'allTimeLeaderboard/search', { clubName: query })
 export const getClubIdByName = async (platform: TPlatformType, query: string) => (await getClubSearch(platform, query))?.[0]?.clubInfo?.clubId
 export const getClubMembers = (platform: TPlatformType, clubId: number) => getParam<IClubMemberStats[]>(platform, 'members/stats', { clubId, clubIds: clubId })
 export const getClubMemberStats = (platform: TPlatformType, clubId: number) => getParam<IClubMemberCareer[]>(platform, 'members/career/stats', { clubId, clubIds: clubId })

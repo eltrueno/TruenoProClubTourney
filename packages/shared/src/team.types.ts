@@ -32,6 +32,13 @@ export interface IEaClubSearchResult {
   clubId: string;
   name: string;
   regionId: number;
-  /** Id del escudo, para construir la URL de imagen con eaCrestUrl() */
+  teamId: number;
+  /**
+   * Indica si usa camiseta personalizada
+   */
+  customKit: boolean;
+  /**
+   * Url para obtener la imagen del escudo o camiseta
+   */
   crestAssetId?: string;
 }
