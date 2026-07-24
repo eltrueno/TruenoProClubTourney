@@ -1,6 +1,7 @@
 import { seriesApi } from './series';
 import { teamsApi } from './teams';
 import { settingsApi } from './settings';
+import { playerStatsApi } from './playerStats';
 
 /**
  * Cliente de la API del torneo, organizado por dominio en vez de un cajón
@@ -17,6 +18,7 @@ export const api = {
   series: seriesApi,
   teams: teamsApi,
   settings: settingsApi,
+  playerStats: playerStatsApi,
 };
 
 export { ApiError } from './client';

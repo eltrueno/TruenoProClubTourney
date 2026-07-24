@@ -1,0 +1,13 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PlayerProfile from "../components/PlayerProfile.vue";
+---
+
+<Layout
+  title="Jugador"
+  description="Perfil de jugador del torneo del mundial 2026 by Casemuro"
+>
+  <div class="py-10 lg:py-16 flex-1 flex flex-col">
+    <PlayerProfile client:load />
+  </div>
+</Layout>
